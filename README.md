@@ -192,7 +192,9 @@ rates differ from 0.334 to 0.508 across tissues.
 
 ## Citation
 
-[Manuscript citation and DOI to be added.]
+[Manuscript citation to be added on acceptance.]
 
-Analysis code, fitted models and the full derivation are at
-[OSF DOI to be added].
+Analysis code, fitted models, and the precomputed prediction table are available
+at <https://doi.org/10.17605/OSF.IO/U3VFK>.
+
+The package source is released under the MIT licence.

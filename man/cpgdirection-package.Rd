@@ -24,6 +24,7 @@ honest and enough to satisfy it.
 Useful links:
 \itemize{
   \item \url{https://github.com/teindor/cpgdirection}
+  \item \doi{10.17605/OSF.IO/U3VFK}
   \item Report bugs at \url{https://github.com/teindor/cpgdirection/issues}
 }
 

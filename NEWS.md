@@ -1,3 +1,58 @@
+# cpgdirection 2.2.4
+
+* **The SMR layer could never fire unless a gene was named.** Its join keyed on
+  `requested_gene` and nothing else, so calling
+  `cpg_expression_direction(my_cpgs)` — the mode most people use — left the key
+  `NA` and the 413,982-pair table contributed nothing. No error, no warning, and
+  the printed summary blamed 450K array coverage for the silence.
+
+  The layer is now always reported, with two new columns deciding what may be
+  done with it. `smr_gene` names the gene the causal estimate concerns.
+  `smr_gene_match` says whether that is the same gene as the rest of the row.
+
+  This matters more than it sounds, because the two layers usually disagree about
+  which gene a CpG regulates: of the 85,220 CpGs present in both the SMR table
+  and a catalogue, only 58.6% share even one gene, and since the catalogue commits
+  to a single target the realised match rate is lower still. `cg00000029` is
+  typical — SMR reaches AKTIP and RBL2, the blood catalogue reaches SCP2.
+
+  So the rule is: report always, promote only on match. A non-matching row shows
+  its direction, tier and p-value in the `smr_*` columns but cannot supply
+  `best_direction`, because that column answers a question about one specific
+  pair. `smr_agreement` is `NA` rather than `FALSE` for those rows: two statements
+  about different genes cannot contradict each other, and calling it disagreement
+  would manufacture a conflict out of compatible facts.
+
+  Where a gene *is* supplied, catalogue-derived fallback keys are not used at all.
+  If you ask for CREBBP, a direction for ADCY9 is not an answer to your question.
+
+  No validation figure changes: S1 95.9% / S2 84.9% / S3 70.4% were measured
+  against the table directly. What changes is that they now reach the caller.
+
+* **Two-token identifiers lost their gene.** `.cpgd_parse_input()` required more
+  than two underscore-separated fields and discarded the first two by position,
+  so `"cg00039463_TRAP1"` — the plainest form anyone would type — parsed to a CpG
+  with no gene, and the distance layer reported itself unavailable. Gene
+  candidates are now taken from whatever follows the token carrying the `cg`
+  identifier, with probe-type codes (`TC21`, `BC11`) dropped by name rather than
+  by position.
+
+* **The "no SMR evidence" message asserted a cause it had not checked.** It
+  attributed every empty result to GoDMC's 450K coverage, including for CpGs
+  sitting in the table with four significant rows. It now distinguishes a CpG
+  absent from the table from one present but unmatched on gene, and says which.
+  New column `smr_in_table` exposes the same distinction.
+
+* Regression tests in `test-smr-layer.R` covering all three. Each would have
+  failed on 2.2.3, and none of the existing tests could have caught them: every
+  bug returned a plausible answer rather than an error.
+
+* `DESCRIPTION` coverage figures corrected. They still described a single
+  gradient-boosted table of 1,603,777 pairs over 604,456 CpGs, which predated the
+  nasal and SMR layers. The shipped data are 3,105,697 pairs over 761,445 CpGs
+  across four evidence sources. Analysis code and fitted models are archived at
+  <https://doi.org/10.17605/OSF.IO/U3VFK>.
+
 # cpgdirection 2.2.3
 
 * `UNMAPPED` was unreachable. An identifier absent from the lookup table came

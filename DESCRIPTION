@@ -1,19 +1,22 @@
 Package: cpgdirection
 Type: Package
 Title: Predict the Direction of CpG-Gene Expression Associations
-Version: 2.2.3
+Version: 2.2.4
 Authors@R: c(
     person("Tsachi", "Ein-Dor", email = "teindor@runi.ac.il",
            role = c("aut", "cre")))
 Description: Assigns a direction to the association between DNA methylation at a
     CpG site and the expression of a nearby gene, for CpGs that have no measured
     expression quantitative trait methylation (eQTM) record. Predictions come
-    from a precomputed table of 1,603,777 CpG-gene pairs covering 604,456 CpGs,
-    derived from a gradient-boosted model built on genomic context and local
-    catalogue structure. Each call returns a direction, a calibrated probability,
-    an evidence tier and an expected accuracy, and abstains where the evidence is
-    insufficient. Predictions estimate direction conditional on the CpG being an
-    eQTM; they do not establish that an effect exists.
+    from a precomputed table of 3,105,697 CpG-gene pairs covering 761,445 CpGs,
+    assembled from four sources of evidence: directly measured eQTMs, summary-data
+    Mendelian randomisation using genetic instruments, gradient-boosted models of
+    genomic context and local catalogue structure fitted separately in blood,
+    nasal epithelium and solid tissue, and a distance prior. Each call returns a
+    direction, a calibrated probability, an evidence tier and an expected
+    accuracy, and abstains where the evidence is insufficient. Predictions
+    estimate direction conditional on the CpG being an eQTM; they do not
+    establish that an effect exists.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.0)
@@ -27,6 +30,7 @@ Suggests: testthat (>= 3.0.0), gt (>= 0.9.0), knitr, rmarkdown
 VignetteBuilder: knitr
 biocViews: DNAMethylation, GeneExpression, Epigenetics, Annotation
 LazyData: false
-URL: https://github.com/teindor/cpgdirection
+URL: https://github.com/teindor/cpgdirection,
+    https://doi.org/10.17605/OSF.IO/U3VFK
 BugReports: https://github.com/teindor/cpgdirection/issues
 Config/roxygen2/version: 8.1.0

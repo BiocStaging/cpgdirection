@@ -19,6 +19,7 @@ export(cpgd_selftest)
 export(cpgd_smr_directions)
 importFrom(TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg19.knownGene)
 importFrom(data.table,
+  "%chin%",
   ":=",
   .SD,
   fcase,

@@ -97,15 +97,30 @@ stopifnot(!anyDuplicated(CPGD_EVIDENCE))
   cpg <- ifelse(pos > 0L, tolower(substr(raw, pos, pos + len - 1L)), NA_character_)
 
   parts <- strsplit(raw, "_", fixed = TRUE)
-  # Gene candidates from a name like <prefix>_<probe-type>_<GENE...>: the whole
-  # tail, and its last token. Panel names carry things like
-  # "ENSG00000253356_STAR" and "CRHR1_LINC02210_CRHR1", where the informative
-  # symbol is at the end.
-  tail_full <- vapply(parts, function(p)
-    if (length(p) > 2L) toupper(paste(p[-c(1L, 2L)], collapse = "_")) else NA_character_,
+  # Gene candidates: everything AFTER the token that carries the cg identifier,
+  # as a whole and as its last token. Panel names carry things like
+  # "Zcg00335286_TC21_MC2R" and "Zcg01961214_TC21_LINC02210_CRHR1", where the
+  # informative symbol sits at the end.
+  #
+  # Locating the cg token is not the same as dropping positions 1 and 2. An
+  # earlier version did the latter, which silently returned NA for the plainest
+  # form a user would ever type -- "cg00039463_TRAP1" has only two tokens, so
+  # removing the first two left nothing and the gene was lost. Probe-type codes
+  # (TC21, BC11) are dropped by name rather than by position, and anything that
+  # survives is validated against the TSS gene list by the caller, so a spurious
+  # candidate costs nothing while a missing one costs a whole evidence layer.
+  .drop_code <- function(p) p[!grepl("^([TB]C[0-9]+|[0-9]+)$", p)]
+  tail_toks <- lapply(parts, function(p) {
+    i <- grep("cg[0-9]{6,}", p, ignore.case = TRUE)[1]
+    if (is.na(i)) i <- 1L
+    tl <- if (i < length(p)) p[(i + 1L):length(p)] else character(0)
+    .drop_code(tl)
+  })
+  tail_full <- vapply(tail_toks, function(tl)
+    if (length(tl)) toupper(paste(tl, collapse = "_")) else NA_character_,
     character(1))
-  tail_last <- vapply(parts, function(p)
-    if (length(p) > 2L) toupper(p[length(p)]) else NA_character_, character(1))
+  tail_last <- vapply(tail_toks, function(tl)
+    if (length(tl)) toupper(tl[length(tl)]) else NA_character_, character(1))
 
   if (all(is.na(given))) {
     gene  <- tail_full

@@ -81,6 +81,19 @@ With \code{tissue = "all"}, a \code{data.table} of class
     \item{gene_*, dir_*, conf_*, tier_*, status_*}{per tissue}
     \item{gene_universal, dist_universal, dir_universal, p_universal}{the
       distance layer}
+    \item{smr_direction, smr_tier, smr_p, smr_n_instruments, smr_gene_dist,
+      smr_agreement}{the Mendelian randomisation layer}
+    \item{smr_gene}{the gene the SMR direction refers to, never left to
+      inference}
+    \item{smr_gene_match}{whether \code{smr_gene} is the same gene the rest of
+      the row concerns. Only matching rows may supply \code{best_direction};
+      non-matching rows are reported in full but describe a different pair.
+      Only 58.6\% of CpGs present in both the SMR table and a catalogue share
+      even one gene between them, so this is the common case rather than an
+      edge case}
+    \item{smr_in_table}{whether the CpG has any SMR evidence at all, for any
+      gene. Distinguishes "no instrument exists" from "the instrument points
+      at a different gene", which are different facts with different remedies}
     \item{measured_genes, annotation_mismatch, mismatch_note}{measured
       evidence, and whether it concerns a gene other than the one requested}
   }

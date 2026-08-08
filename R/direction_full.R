@@ -68,6 +68,19 @@
 #'     \item{gene_*, dir_*, conf_*, tier_*, status_*}{per tissue}
 #'     \item{gene_universal, dist_universal, dir_universal, p_universal}{the
 #'       distance layer}
+#'     \item{smr_direction, smr_tier, smr_p, smr_n_instruments, smr_gene_dist,
+#'       smr_agreement}{the Mendelian randomisation layer}
+#'     \item{smr_gene}{the gene the SMR direction refers to, never left to
+#'       inference}
+#'     \item{smr_gene_match}{whether \code{smr_gene} is the same gene the rest of
+#'       the row concerns. Only matching rows may supply \code{best_direction};
+#'       non-matching rows are reported in full but describe a different pair.
+#'       Only 58.6\% of CpGs present in both the SMR table and a catalogue share
+#'       even one gene between them, so this is the common case rather than an
+#'       edge case}
+#'     \item{smr_in_table}{whether the CpG has any SMR evidence at all, for any
+#'       gene. Distinguishes "no instrument exists" from "the instrument points
+#'       at a different gene", which are different facts with different remedies}
 #'     \item{measured_genes, annotation_mismatch, mismatch_note}{measured
 #'       evidence, and whether it concerns a gene other than the one requested}
 #'   }
@@ -302,7 +315,7 @@ cpg_expression_direction <- function(cpgs,
   # what the catalogues tested. Median CpG-gene distance 135 kb: it reaches
   # exactly the range where the distance curves go flat.
   scols <- c("smr_direction", "smr_tier", "smr_p", "smr_n_instruments",
-             "smr_gene_dist")
+             "smr_gene_dist", "smr_gene", "smr_gene_match", "smr_in_table")
   S <- tryCatch(cpgd_smr_directions(), error = function(e) NULL)
   if (!is.null(S) && nrow(S)) {
     SS <- data.table::data.table(
@@ -314,18 +327,76 @@ cpg_expression_direction <- function(cpgs,
     data.table::setorderv(SS, c("cpg_id", "g", "tier", "p"))
     SS <- SS[, .SD[1L], by = c("cpg_id", "g")]
     data.table::setkeyv(SS, c("cpg_id", "g"))
-    h1 <- SS[data.table::data.table(cpg_id = out$cpg_id, g = req),
-             on = c("cpg_id", "g")]
-    h2 <- SS[data.table::data.table(cpg_id = out$cpg_id, g = last),
-             on = c("cpg_id", "g")]
-    pick <- !is.na(h1$d)
-    out[, "smr_direction"     := data.table::fifelse(pick, h1$d,  h2$d)]
-    out[, "smr_tier"          := data.table::fifelse(pick, h1$tier, h2$tier)]
-    out[, "smr_p"             := data.table::fifelse(pick, h1$p,  h2$p)]
-    out[, "smr_n_instruments" := data.table::fifelse(pick, h1$ni, h2$ni)]
-    out[, "smr_gene_dist"     := data.table::fifelse(pick, h1$gd, h2$gd)]
+
+    # Whether the CpG appears in the SMR table AT ALL, independent of gene. The
+    # print method needs this to avoid asserting a coverage explanation for a
+    # CpG that is present and simply had no row for the gene we asked about.
+    out[, "smr_in_table" := out$cpg_id %chin% unique(SS$cpg_id)]
+
+    # Candidate gene keys, in priority order: what the caller asked for, then
+    # the target genes the catalogue layers resolved on their own. A hit on any
+    # of these is a GENE MATCH -- the causal estimate and the catalogue
+    # prediction are talking about the same pair.
+    #
+    # The catalogue-derived candidates apply only where the caller named nothing.
+    # If you asked for CREBBP, a direction for ADCY9 is not an answer to your
+    # question, and substituting one would be worse than returning nothing.
+    gcols <- intersect(paste0("gene_", short), names(out))
+    cand  <- c(list(req, last),
+               if (length(gcols)) lapply(gcols, function(cc) toupper(out[[cc]])))
+    asked <- !is.na(req)
+
+    d <- rep(NA_real_, n); ti <- rep(NA_character_, n); pp <- rep(NA_real_, n)
+    ni <- rep(NA_integer_, n); gd <- rep(NA_real_, n); gg <- rep(NA_character_, n)
+    for (k in seq_along(cand)) {
+      key <- cand[[k]]
+      if (k > 2L) key[asked] <- NA_character_
+      need <- is.na(d) & !is.na(key)
+      if (!any(need)) next
+      hit <- SS[data.table::data.table(cpg_id = out$cpg_id, g = key),
+                on = c("cpg_id", "g")]
+      take <- need & !is.na(hit$d)
+      if (!any(take)) next
+      d[take]  <- hit$d[take];    ti[take] <- hit$tier[take]
+      pp[take] <- hit$p[take];    ni[take] <- hit$ni[take]
+      gd[take] <- hit$gd[take];   gg[take] <- key[take]
+    }
+    matched <- !is.na(d)
+
+    # Where no gene matched, still REPORT the CpG's strongest SMR pair rather
+    # than nothing, naming the gene it concerns.
+    #
+    # The two layers largely disagree about which gene a CpG regulates: only
+    # 58.6% of CpGs present in both share even one gene between them, and since
+    # the catalogue commits to a single target the realised match rate is lower
+    # still. Gating the layer on gene identity therefore hid causal evidence for
+    # the majority of the 103,285 CpGs it covers. Withholding an S1 estimate at
+    # p = 1e-30 because it names RBL2 while the catalogue named SCP2 tells the
+    # user nothing they can act on; showing it, labelled, tells them a great deal.
+    #
+    # What such a row must NOT do is supply best_direction, because that column
+    # answers a question about a specific pair. `smr_gene_match` carries the
+    # distinction and every downstream use of the layer is gated on it.
+    SB <- SS[, .SD[1L], by = "cpg_id"]        # SS is already ordered tier, then p
+    data.table::setkeyv(SB, "cpg_id")
+    hb <- SB[data.table::data.table(cpg_id = out$cpg_id), on = "cpg_id"]
+    fill <- !matched & !is.na(hb$d)
+    d[fill]  <- hb$d[fill];    ti[fill] <- hb$tier[fill]
+    pp[fill] <- hb$p[fill];    ni[fill] <- hb$ni[fill]
+    gd[fill] <- hb$gd[fill];   gg[fill] <- hb$g[fill]
+
+    out[, "smr_direction"     := d]
+    out[, "smr_tier"          := ti]
+    out[, "smr_p"             := pp]
+    out[, "smr_n_instruments" := ni]
+    out[, "smr_gene_dist"     := gd]
+    # Which gene the SMR direction refers to. Never left to inference: without
+    # this column a reported direction is ambiguous as to its subject.
+    out[, "smr_gene"          := gg]
+    out[, "smr_gene_match"    := matched]
   } else {
-    out[, (scols) := list(NA_real_, NA_character_, NA_real_, NA_integer_, NA_real_)]
+    out[, (scols) := list(NA_real_, NA_character_, NA_real_, NA_integer_,
+                          NA_real_, NA_character_, FALSE, FALSE)]
   }
 
   # ---- layer 3: distance only --------------------------------------------
@@ -394,9 +465,15 @@ cpg_expression_direction <- function(cpgs,
   i <- which(!is.na(out$measured_direction_requested))
   best[i] <- out$measured_direction_requested[i];  src[i] <- "measured"
 
+  # Only SMR rows that concern the SAME gene as the rest of the row may supply
+  # best_direction. Where smr_gene_match is FALSE the estimate is still reported
+  # in the smr_* columns, but it answers a question about a different pair and
+  # must not be promoted into a column that answers this one.
+  smr_ok <- out$smr_gene_match %in% TRUE & !is.na(out$smr_direction)
+
   # S1 (95.9%) outranks every predicted layer; it is beaten only by a measured
   # eQTM. Slotted by validated accuracy, not by which layer is newest.
-  i <- which(is.na(src) & out$smr_tier == "S1" & !is.na(out$smr_direction))
+  i <- which(is.na(src) & smr_ok & out$smr_tier == "S1")
   best[i] <- out$smr_direction[i];                 src[i] <- "smr_high"
 
   i <- which(is.na(src) & !is.na(out$consensus_direction) &
@@ -404,7 +481,7 @@ cpg_expression_direction <- function(cpgs,
   best[i] <- out$consensus_direction[i];           src[i] <- "catalogue_consensus"
 
   # S2 (84.9%) sits alongside the catalogue models, below their consensus.
-  i <- which(is.na(src) & out$smr_tier == "S2" & !is.na(out$smr_direction))
+  i <- which(is.na(src) & smr_ok & out$smr_tier == "S2")
   best[i] <- out$smr_direction[i];                 src[i] <- "smr_moderate"
 
   i <- which(is.na(src) & out$n_tissues_calling == 1L & !is.na(out$.single))
@@ -412,7 +489,7 @@ cpg_expression_direction <- function(cpgs,
 
   # S3 (70.4%) is weaker than a single-tissue catalogue call: its instruments
   # disagree, which is a warning rather than extra evidence.
-  i <- which(is.na(src) & out$smr_tier == "S3" & !is.na(out$smr_direction))
+  i <- which(is.na(src) & smr_ok & out$smr_tier == "S3")
   best[i] <- out$smr_direction[i];                 src[i] <- "smr_weak"
 
   # Tissues pointing opposite ways is a finding, not a gap. Falling through to
@@ -547,8 +624,13 @@ cpg_expression_direction <- function(cpgs,
   # from the output entirely, even where it disagrees. A correlational
   # prediction and a causal estimate pointing opposite ways is a finding, not
   # noise to be resolved by precedence, so record it.
+  # Agreement is only meaningful between two statements about the same pair.
+  # Where the SMR row concerns a different gene there is nothing to agree or
+  # disagree with, and reporting FALSE there would manufacture a contradiction
+  # out of two compatible facts.
   out[, "smr_agreement" := data.table::fifelse(
-        is.na(get("smr_direction")) | is.na(best), NA,
+        is.na(get("smr_direction")) | is.na(best) |
+          !(get("smr_gene_match") %in% TRUE), NA,
         get("smr_direction") == best)]
 
   out[, "best_direction"  := best]
@@ -593,8 +675,8 @@ cpg_expression_direction <- function(cpgs,
            "best_direction", "best_label", "best_confidence", "best_evidence",
            "best_tier", "best_expected_accuracy",
            "direction_uncertain", "best_direction_filled", "best_direction_flipped",
-           "smr_direction", "smr_tier", "smr_p", "smr_n_instruments",
-           "smr_gene_dist", "smr_agreement",
+           "smr_direction", "smr_gene", "smr_gene_match", "smr_tier", "smr_p",
+           "smr_n_instruments", "smr_gene_dist", "smr_agreement", "smr_in_table",
            "consensus_direction", "n_tissues_calling", "tissue_agreement",
            as.vector(rbind(paste0("gene_", short), paste0("dir_", short),
                            paste0("conf_", short), paste0("tier_", short),
@@ -665,11 +747,34 @@ print.cpgd_full <- function(x, ...) {
     nd  <- sum(x$smr_agreement %in% FALSE)
     cat("\n  Mendelian randomisation layer:\n")
     if (ns == 0) {
-      cat("    no SMR evidence for any CpG here. GoDMC is a 450K meta-analysis,\n",
-          "    so EPIC-only probes were never assayed and cannot have an mQTL.\n", sep = "")
+      # Two different reasons produce no SMR direction, and they send you to
+      # different places. Absent from the table means no instrument exists.
+      # Present but unmatched means the instrument exists and points at some
+      # other gene. Blaming array coverage in the second case is simply wrong,
+      # and it cost an afternoon of looking in the wrong file.
+      nin <- if ("smr_in_table" %in% names(x)) sum(x$smr_in_table %in% TRUE) else 0L
+      if (nin == 0L) {
+        cat("    no SMR evidence for any CpG here: none of them appears in the\n",
+            "    table at all. GoDMC is a 450K meta-analysis, so EPIC-only probes\n",
+            "    were never assayed and cannot have an mQTL.\n", sep = "")
+      } else {
+        cat(sprintf("    no SMR direction reported, but %d of these CpGs DO have SMR\n", nin),
+            "    evidence - for genes other than the one matched here. The\n",
+            "    instrument exists; it points somewhere else. See\n",
+            "    cpgd_smr_directions() for the genes it does reach.\n", sep = "")
+      }
     } else {
-      cat(sprintf("    evidence for %d CpGs; supplied best_direction for %d, outranked for %d\n",
-                  ns, nsu, ns - nsu))
+      nm_ <- if ("smr_gene_match" %in% names(x)) sum(x$smr_gene_match %in% TRUE) else ns
+      cat(sprintf("    evidence for %d CpGs; %d concern the same gene as the rest of the row\n",
+                  ns, nm_))
+      cat(sprintf("    of those %d: supplied best_direction for %d, outranked for %d\n",
+                  nm_, nsu, max(nm_ - nsu, 0)))
+      if (ns - nm_ > 0)
+        cat(sprintf("    %d report a causal direction for a DIFFERENT gene - see smr_gene.\n",
+                    ns - nm_),
+            "        Not a contradiction and not promoted to best_direction:\n",
+            "        the catalogue and the instrument disagree about which gene\n",
+            "        this CpG regulates, which is worth knowing on its own.\n", sep = "")
       if (nd > 0)
         cat(sprintf("    *** %d CpGs where SMR DISAGREES with the direction reported.\n", nd),
             "        A causal estimate and a correlational prediction pointing\n",

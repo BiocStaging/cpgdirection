@@ -1,0 +1,25 @@
+# R session state
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Renviron
+
+# build artefacts
+*.tar.gz
+*.Rcheck/
+src/*.o
+src/*.so
+src/*.dll
+inst/doc/
+doc/
+Meta/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# credentials - never
+.httr-oauth
+*.pem
+*.key

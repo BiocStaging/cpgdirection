@@ -1,3 +1,35 @@
+# cpgdirection 2.2.5
+
+* **HEIDI results are now shipped.** `smr_directions.csv.gz` gains `p_HEIDI`,
+  `nsnp_HEIDI` and `heidi_status`; `cpg_expression_direction()` surfaces the
+  latter two as `smr_heidi_status` and `smr_p_heidi`. Row count is unchanged at
+  413,982.
+
+* **Nothing conditions on them, deliberately.** Across all 413,982 pairs, 5.4%
+  passed HEIDI, 78.1% failed, and 16.4% had fewer than three instruments after
+  LD pruning and could not be tested. Against the directly measured eQTMs,
+  passing pairs were concordant 80.8% of the time and failing pairs 87.3%
+  (p = 0.002) — the opposite of what a useful filter looks like.
+
+  The cause is power, not biology. HEIDI's ability to reject rises with the
+  number of instruments, and so does the precision of the Wald ratio.
+  Concordance by instruments surviving pruning runs 69.9% (<3), 74.8% (3-5),
+  74.0% (6-10), 88.0% (11-20), and mean instrument count is 17.3 among failing
+  pairs against 12.0 among passing ones. With both QTL resources above 30,000
+  individuals, HEIDI detects heterogeneity far below the level that would flip a
+  sign, so filtering on it would discard the best-instrumented and most accurate
+  pairs first.
+
+  `not_tested` is kept strictly apart from `pass` throughout. Recording an
+  untested pair as passing would convert absence of evidence into evidence,
+  which is the error this whole exercise exists to avoid.
+
+* The tier structure is unchanged and S1 > S2 > S3 holds within every HEIDI
+  stratum.
+
+* `cpgd_smr_directions()` reads the new columns defensively, so a stale cached
+  table yields `NA` rather than an error.
+
 # cpgdirection 2.2.4
 
 * **The SMR layer could never fire unless a gene was named.** Its join keyed on

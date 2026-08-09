@@ -9,8 +9,9 @@ cpgd_smr_directions()
 \value{
 A \code{data.table} with \code{cpg_id}, \code{target_gene},
   \code{direction}, \code{smr_tier}, \code{p_SMR}, \code{n_instruments},
-  \code{instrument_agreement}, \code{cpg_gene_dist} and
-  \code{top_instrument}.
+  \code{instrument_agreement}, \code{cpg_gene_dist},
+  \code{top_instrument}, and from 2.2.5 \code{p_HEIDI}, \code{nsnp_HEIDI}
+  and \code{heidi_status} (\code{"pass"}, \code{"fail"}, \code{"not_tested"}).
 }
 \description{
 413,982 CpG-gene pairs over 103,285 CpGs and 14,056 genes, derived by
@@ -47,14 +48,36 @@ a warning, not extra evidence.
 
 A significant SMR result is consistent with methylation affecting expression,
 and equally with \strong{linkage} -- two distinct causal variants in LD, one
-acting on each trait. Distinguishing them requires HEIDI, which is not run
-here. Agreement among multiple independent instruments (tier S1) argues
-against linkage but does not exclude it.
+acting on each trait. Agreement among multiple independent instruments
+(tier S1) argues against linkage but does not exclude it.
 
 Both datasets are whole blood, so the causal claim is about blood whatever
 tissue the gene matters in. Palindromic SNPs and unresolvable allele
 mismatches were dropped rather than assumed; 21,698 instrument-gene
 comparisons were refused on those grounds.
+}
+
+\section{HEIDI, and why it is reported but not applied}{
+
+Distinguishing mediation from linkage is what HEIDI is for. It was run on all
+413,982 pairs with SMR v1.03 against the 1000 Genomes European reference:
+22,421 pairs passed (5.4\%), 323,464 failed (78.1\%), and 68,097 (16.4\%) had
+fewer than three instruments after LD pruning and could not be tested.
+\strong{Not tested is not passed} and the two are never merged.
+
+The tiering does \strong{not} condition on HEIDI, because on these data it
+does not discriminate in the direction that would justify a filter. Against
+the measured eQTMs, passing pairs were concordant 80.8\% of the time and
+failing pairs 87.3\% (p = 0.002) -- the wrong way round. The cause is power:
+HEIDI's ability to reject rises with instrument count, and so does the
+precision of the Wald ratio. Concordance by instruments surviving pruning was
+69.9\% (<3), 74.8\% (3-5), 74.0\% (6-10) and 88.0\% (11-20), while mean
+instrument count was 17.3 among failing pairs against 12.0 among passing
+ones. Filtering on HEIDI would discard the best-instrumented and most
+accurate pairs first.
+
+The columns are shipped so you can condition on them if you wish. Do so with
+the above in view.
 }
 
 \examples{

@@ -71,6 +71,35 @@ test_that("a supplied gene is never silently replaced by another", {
   expect_true(is.na(r$smr_agreement[1]))
 })
 
+test_that("HEIDI columns are shipped and surfaced", {
+  # The manuscript states that p_HEIDI, nsnp_HEIDI and a three-level status are
+  # shipped with the package. This test is what makes that sentence true.
+  S <- tryCatch(cpgd_smr_directions(), error = function(e) NULL)
+  skip_if(is.null(S) || !nrow(S), "SMR table unavailable")
+
+  expect_true(all(c("p_HEIDI", "nsnp_HEIDI", "heidi_status") %in% names(S)))
+  expect_setequal(setdiff(unique(S$heidi_status), NA),
+                  c("pass", "fail", "not_tested"))
+  # not_tested must be exactly the rows with too few instruments, never a
+  # relabelled pass.
+  expect_true(all(is.na(S$p_HEIDI[S$heidi_status == "not_tested"])))
+  expect_true(all(S$p_HEIDI[S$heidi_status == "pass"] >= 0.05))
+  expect_true(all(S$p_HEIDI[S$heidi_status == "fail"]  <  0.05))
+
+  r <- cpg_expression_direction(S$cpg_id[1], verbose = FALSE)
+  expect_true(all(c("smr_heidi_status", "smr_p_heidi") %in% names(r)))
+})
+
+test_that("nothing in the package conditions on HEIDI", {
+  S <- tryCatch(cpgd_smr_directions(), error = function(e) NULL)
+  skip_if(is.null(S) || !nrow(S), "SMR table unavailable")
+
+  # Tiers must be independent of HEIDI status: if a future edit quietly starts
+  # filtering, S1 would stop appearing among HEIDI-failing pairs.
+  expect_true(nrow(S[S$smr_tier == "S1" & S$heidi_status == "fail", ]) > 0)
+  expect_true(nrow(S[S$smr_tier == "S1" & S$heidi_status == "pass", ]) > 0)
+})
+
 test_that("smr_in_table separates absent CpGs from unmatched genes", {
   S <- tryCatch(cpgd_smr_directions(), error = function(e) NULL)
   skip_if(is.null(S) || !nrow(S), "SMR table unavailable")

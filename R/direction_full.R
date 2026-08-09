@@ -78,6 +78,12 @@
 #'       Only 58.6\% of CpGs present in both the SMR table and a catalogue share
 #'       even one gene between them, so this is the common case rather than an
 #'       edge case}
+#'     \item{smr_heidi_status, smr_p_heidi}{the HEIDI heterogeneity test:
+#'       \code{"pass"}, \code{"fail"} or \code{"not_tested"} (fewer than three
+#'       instruments survived LD pruning). Reported, never acted on: on these
+#'       data HEIDI did not separate concordant from discordant directions, and
+#'       filtering on it would discard the best-instrumented pairs first. See
+#'       \code{?cpgd_smr_directions}}
 #'     \item{smr_in_table}{whether the CpG has any SMR evidence at all, for any
 #'       gene. Distinguishes "no instrument exists" from "the instrument points
 #'       at a different gene", which are different facts with different remedies}
@@ -315,14 +321,23 @@ cpg_expression_direction <- function(cpgs,
   # what the catalogues tested. Median CpG-gene distance 135 kb: it reaches
   # exactly the range where the distance curves go flat.
   scols <- c("smr_direction", "smr_tier", "smr_p", "smr_n_instruments",
-             "smr_gene_dist", "smr_gene", "smr_gene_match", "smr_in_table")
+             "smr_gene_dist", "smr_gene", "smr_gene_match", "smr_in_table",
+             "smr_heidi_status", "smr_p_heidi")
   S <- tryCatch(cpgd_smr_directions(), error = function(e) NULL)
   if (!is.null(S) && nrow(S)) {
+    # heidi_status is absent from tables built before 2.2.5, so read it
+    # defensively rather than assuming the shipped file is current: a user with
+    # a stale cached copy should get NA, not an error.
+    hs <- if ("heidi_status" %in% names(S)) as.character(S$heidi_status)
+          else rep(NA_character_, nrow(S))
+    ph <- if ("p_HEIDI" %in% names(S)) suppressWarnings(as.numeric(S$p_HEIDI))
+          else rep(NA_real_, nrow(S))
     SS <- data.table::data.table(
       cpg_id = S$cpg_id, g = toupper(S$target_gene),
       d = as.numeric(S$direction), tier = as.character(S$smr_tier),
       p = as.numeric(S$p_SMR), ni = as.integer(S$n_instruments),
-      gd = suppressWarnings(as.numeric(S$cpg_gene_dist)))
+      gd = suppressWarnings(as.numeric(S$cpg_gene_dist)),
+      hstat = hs, pheidi = ph)
     # one row per pair: strongest tier, then smallest p
     data.table::setorderv(SS, c("cpg_id", "g", "tier", "p"))
     SS <- SS[, .SD[1L], by = c("cpg_id", "g")]
@@ -348,6 +363,7 @@ cpg_expression_direction <- function(cpgs,
 
     d <- rep(NA_real_, n); ti <- rep(NA_character_, n); pp <- rep(NA_real_, n)
     ni <- rep(NA_integer_, n); gd <- rep(NA_real_, n); gg <- rep(NA_character_, n)
+    hh <- rep(NA_character_, n); hp <- rep(NA_real_, n)
     for (k in seq_along(cand)) {
       key <- cand[[k]]
       if (k > 2L) key[asked] <- NA_character_
@@ -360,6 +376,7 @@ cpg_expression_direction <- function(cpgs,
       d[take]  <- hit$d[take];    ti[take] <- hit$tier[take]
       pp[take] <- hit$p[take];    ni[take] <- hit$ni[take]
       gd[take] <- hit$gd[take];   gg[take] <- key[take]
+      hh[take] <- hit$hstat[take]; hp[take] <- hit$pheidi[take]
     }
     matched <- !is.na(d)
 
@@ -384,6 +401,7 @@ cpg_expression_direction <- function(cpgs,
     d[fill]  <- hb$d[fill];    ti[fill] <- hb$tier[fill]
     pp[fill] <- hb$p[fill];    ni[fill] <- hb$ni[fill]
     gd[fill] <- hb$gd[fill];   gg[fill] <- hb$g[fill]
+    hh[fill] <- hb$hstat[fill]; hp[fill] <- hb$pheidi[fill]
 
     out[, "smr_direction"     := d]
     out[, "smr_tier"          := ti]
@@ -394,9 +412,15 @@ cpg_expression_direction <- function(cpgs,
     # this column a reported direction is ambiguous as to its subject.
     out[, "smr_gene"          := gg]
     out[, "smr_gene_match"    := matched]
+    # Reported, never acted on. HEIDI did not discriminate on these data -- see
+    # ?cpgd_smr_directions -- so nothing in this package conditions on it, and a
+    # user who wants to must do so deliberately.
+    out[, "smr_heidi_status"  := hh]
+    out[, "smr_p_heidi"       := hp]
   } else {
     out[, (scols) := list(NA_real_, NA_character_, NA_real_, NA_integer_,
-                          NA_real_, NA_character_, FALSE, FALSE)]
+                          NA_real_, NA_character_, FALSE, FALSE,
+                          NA_character_, NA_real_)]
   }
 
   # ---- layer 3: distance only --------------------------------------------
@@ -677,6 +701,7 @@ cpg_expression_direction <- function(cpgs,
            "direction_uncertain", "best_direction_filled", "best_direction_flipped",
            "smr_direction", "smr_gene", "smr_gene_match", "smr_tier", "smr_p",
            "smr_n_instruments", "smr_gene_dist", "smr_agreement", "smr_in_table",
+           "smr_heidi_status", "smr_p_heidi",
            "consensus_direction", "n_tissues_calling", "tissue_agreement",
            as.vector(rbind(paste0("gene_", short), paste0("dir_", short),
                            paste0("conf_", short), paste0("tier_", short),

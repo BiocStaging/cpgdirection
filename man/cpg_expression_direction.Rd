@@ -91,6 +91,12 @@ With \code{tissue = "all"}, a \code{data.table} of class
       Only 58.6\% of CpGs present in both the SMR table and a catalogue share
       even one gene between them, so this is the common case rather than an
       edge case}
+    \item{smr_heidi_status, smr_p_heidi}{the HEIDI heterogeneity test:
+      \code{"pass"}, \code{"fail"} or \code{"not_tested"} (fewer than three
+      instruments survived LD pruning). Reported, never acted on: on these
+      data HEIDI did not separate concordant from discordant directions, and
+      filtering on it would discard the best-instrumented pairs first. See
+      \code{?cpgd_smr_directions}}
     \item{smr_in_table}{whether the CpG has any SMR evidence at all, for any
       gene. Distinguishes "no instrument exists" from "the instrument points
       at a different gene", which are different facts with different remedies}

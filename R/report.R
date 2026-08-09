@@ -41,7 +41,14 @@ cpgd_report <- function(x,
       c("input", "cpg_id", "requested_gene", "best_direction", "best_evidence",
         "best_confidence", "best_tier", "best_expected_accuracy",
         "direction_uncertain", "best_direction_filled", "best_direction_flipped",
-        "smr_direction", "smr_tier", "smr_agreement",
+        # smr_gene and smr_gene_match are not optional detail. A causal
+        # direction whose subject is unstated is ambiguous, and on real panels
+        # roughly three quarters of SMR rows concern a different gene from the
+        # rest of the row. Omitting them from the compact report - which is what
+        # most users actually read - would present those directions as though
+        # they were about the requested gene.
+        "smr_direction", "smr_gene", "smr_gene_match", "smr_tier",
+        "smr_agreement", "smr_heidi_status",
         "n_tissues_calling", "dist_universal",
         "dist_dir_blood", "dist_dir_nasal", "dist_dir_solid",
         "measured_genes", "note")

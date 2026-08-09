@@ -10,9 +10,26 @@ measured eQTM record.
 
 ## Install
 
-Dependencies first, then the package. `install.packages()` on a local tarball
-does **not** resolve dependencies, and the annotation packages are hard imports,
-so the order matters.
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+BiocManager::install("teindor/cpgdirection")
+```
+
+That resolves the Bioconductor dependencies and installs the package in one
+step. Use `BiocManager::install()` rather than `remotes::install_github()`:
+two of the imports are annotation packages that CRAN-only installers will not
+find.
+
+Budget **~400 MB and several minutes** for `TxDb.Hsapiens.UCSC.hg19.knownGene`
+and `org.Hs.eg.db` the first time. They are needed only by
+`cpg_direction_universal()`; the catalogue, SMR and multi-tissue functions have
+no Bioconductor requirement.
+
+<details>
+<summary>Installing from a local tarball instead</summary>
+
+`install.packages()` on a tarball does **not** resolve dependencies, so the
+order matters:
 
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
@@ -20,19 +37,16 @@ BiocManager::install(c("TxDb.Hsapiens.UCSC.hg19.knownGene", "org.Hs.eg.db",
                        "GenomicFeatures", "GenomicRanges", "AnnotationDbi"))
 install.packages("data.table")
 
-install.packages("cpgdirection_2.2.3.tar.gz", repos = NULL, type = "source")
+install.packages("cpgdirection_2.2.5.tar.gz", repos = NULL, type = "source")
 ```
+</details>
 
-Budget **~400 MB and several minutes** for `TxDb.Hsapiens.UCSC.hg19.knownGene`
-and `org.Hs.eg.db` the first time. They are needed only by
-`cpg_direction_universal()`; the catalogue and multi-tissue functions have no
-Bioconductor requirement.
+Verify the installation with `cpgd_selftest()`.
 
-Once the repository is public, `BiocManager::install("teindor/cpgdirection")`
-does both steps in one line.
-
-All three prediction tables and 930,178 EPIC v2 hg19 probe positions ship
-inside the package (~52 MB). No Python, no compilation.
+Everything ships inside the package (~60 MB installed): the three per-tissue
+prediction tables, the SMR causal-direction table with HEIDI results, the
+measured-eQTM table, and 930,178 EPIC v2 hg19 probe positions. No Python, no
+compilation, no network access at run time.
 
 ## Use
 

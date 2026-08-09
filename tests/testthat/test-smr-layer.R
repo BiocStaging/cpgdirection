@@ -100,6 +100,21 @@ test_that("nothing in the package conditions on HEIDI", {
   expect_true(nrow(S[S$smr_tier == "S1" & S$heidi_status == "pass", ]) > 0)
 })
 
+test_that("the compact report carries the columns needed to read an SMR row", {
+  S <- tryCatch(cpgd_smr_directions(), error = function(e) NULL)
+  skip_if(is.null(S) || !nrow(S), "SMR table unavailable")
+  skip_if_not_installed("gt")
+
+  r <- cpg_expression_direction(utils::head(unique(S$cpg_id), 20), verbose = FALSE)
+  f <- tempfile(fileext = ".html")
+  on.exit(unlink(f), add = TRUE)
+  suppressMessages(cpgd_report(r, file = f))
+  txt <- paste(readLines(f, warn = FALSE), collapse = " ")
+  # A direction without its gene is ambiguous; the report must not drop it.
+  for (col in c("smr_gene", "smr_gene_match", "smr_heidi_status"))
+    expect_true(grepl(col, txt, fixed = TRUE), info = col)
+})
+
 test_that("smr_in_table separates absent CpGs from unmatched genes", {
   S <- tryCatch(cpgd_smr_directions(), error = function(e) NULL)
   skip_if(is.null(S) || !nrow(S), "SMR table unavailable")

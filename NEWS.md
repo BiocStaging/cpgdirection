@@ -30,6 +30,15 @@
 * `cpgd_smr_directions()` reads the new columns defensively, so a stale cached
   table yields `NA` rather than an error.
 
+* **`cpgd_report()` was dropping the columns that make an SMR row readable.**
+  Its compact column list is hand-written, so `smr_gene`, `smr_gene_match` and
+  `smr_heidi_status` never reached the HTML — the output most users actually
+  look at. On a real panel about three quarters of SMR rows concern a different
+  gene from the rest of the row, so a report showing `smr_direction` without
+  `smr_gene` presents those directions as though they were about the requested
+  gene. All three are now included, and a test renders a report and greps for
+  them.
+
 # cpgdirection 2.2.4
 
 * **The SMR layer could never fire unless a gene was named.** Its join keyed on

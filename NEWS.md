@@ -1,3 +1,49 @@
+# cpgdirection 2.3.0
+
+* **The brain bridge.** Three new data layers and one user-facing function
+  answer the question most users actually have: what does a saliva or blood
+  measurement license about the brain?
+
+  - `cpgd_brain_directions()` — 220,383 brain CpG-gene pairs with SMR causal
+    directions (Brain-mMeta x BrainMeta v2), tiered by a score validated
+    out-of-sample in blood (T1 96.3%, T2 83.0%) and against the independent
+    Gibbs brain catalogue (T1 92-96% across every rung).
+  - `cpgd_bridge_deliverable()` — the graded 728-CpG intersection of a T1 brain
+    direction with robust peripheral-brain concordance; grade A++ (205 CpGs,
+    184 saliva-usable) is supported by four independent cohorts.
+  - `cpg_brain_bridge(my_cpgs, tissue = "saliva")` — per CpG: brain direction
+    and target(s), concordance evidence for YOUR tissue, deliverable grade,
+    genome-wide synthesised bridge score, and strict-QC flags.
+
+* The print method repeats three caveats on purpose: directions are
+  brain-derived (peripheral eQTM directions agree with brain only ~65%);
+  concordance couplings rest on n = 27 living-brain donors; sex-chromosome and
+  discontinued probes produce replicable artefactual concordance and are
+  guarded by `strict_qc`.
+
+* Licence note: shipped bridge data derive from open resources (IMAGE-CpG,
+  AMAZE, GSE59685, Sommerer, Gibbs). Components derived from CC-BY-NC sources
+  (the pediatric coupling table) are deliberately excluded from the package and
+  live in the OSF deposit.
+
+* **Co-regulation columns, two evidence classes kept apart.** `co_up`/`co_down`
+  list the T1 partner genes a CpG's methylation moves in each direction —
+  causal co-direction from the brain layer itself, with bivalent CpGs visibly
+  split rather than merged. `hic_genes` lists genes contacted by the same
+  adult-cortex enhancer (PsychENCODE; 23,194 CpGs): candidate co-regulation by
+  physical contact, no direction attached. TF-regulon co-activation is
+  deliberately NOT shipped: the motif-to-polarity chain performed at its
+  majority baseline in brain and does not meet the package's evidence bar.
+
+* Gene-aware input: a gene named in the identifier or a data.frame column is
+  echoed back with its own answer (`requested_gene`, `requested_gene_direction`,
+  `requested_gene_tier`) — `NA` when the gene is not a partner of that CpG,
+  never a silently substituted neighbour.
+
+* +12.6 MB of extdata; tests pin the manuscript's headline counts (728 / 205 /
+  184), the POMC example, all input formats, and the co_up/co_down sign split,
+  so silent data drift fails the build.
+
 # cpgdirection 2.2.5
 
 * **HEIDI results are now shipped.** `smr_directions.csv.gz` gains `p_HEIDI`,

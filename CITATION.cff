@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "cpgdirection: Predict the Direction of CpG-Gene Expression Associations"
+message: "If you use this software, please cite it."
+type: software
+authors:
+  - family-names: Ein-Dor
+    given-names: Tsachi
+    email: teindor@runi.ac.il
+    affiliation: "Reichman University"
+    orcid: "https://orcid.org/0000-0002-3078-7591"
+version: 2.3.0
+license: MIT
+repository-code: "https://github.com/teindor/cpgdirection"
+abstract: >-
+  Assigns a direction to the association between DNA methylation at a CpG site
+  and the expression of a nearby gene, for CpGs with no measured eQTM record,
+  from a precomputed table of 3,105,697 CpG-gene pairs covering 761,445 CpGs.
+  Each call returns a direction, a calibrated probability, an evidence tier and
+  an expected accuracy, and abstains where the evidence is insufficient.
+keywords:
+  - DNA methylation
+  - gene expression
+  - eQTM
+  - epigenetics
+  - annotation

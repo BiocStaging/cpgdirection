@@ -1,39 +1,39 @@
 Package: cpgdirection
 Type: Package
 Title: Predict the Direction of CpG-Gene Expression Associations
-Version: 2.6.0
+Version: 2.99.0
 Authors@R: c(
-    person("Tsachi", "Ein-Dor", email = "teindor@runi.ac.il",
-           role = c("aut", "cre", "fnd"),
-           comment = c(ORCID = "0000-0002-3078-7591")))
+ person("Tsachi", "Ein-Dor", email = "teindor@runi.ac.il",
+ role = c("aut", "cre", "fnd"),
+ comment = c(ORCID = "0000-0002-3078-7591")))
 Description: Assigns a direction to the association between DNA methylation at a
-    CpG site and the expression of a nearby gene, for CpGs that have no measured
-    expression quantitative trait methylation (eQTM) record. Predictions come
-    from a precomputed table of 3,105,697 CpG-gene pairs covering 761,445 CpGs,
-    assembled from four sources of evidence: directly measured eQTMs, summary-data
-    Mendelian randomisation using genetic instruments, gradient-boosted models of
-    genomic context and local catalogue structure fitted separately in blood,
-    nasal epithelium and solid tissue, and a distance prior. Each call returns a
-    direction, a calibrated probability, an evidence tier and an expected
-    accuracy, and abstains where the evidence is insufficient. Predictions
-    estimate direction conditional on the CpG being an eQTM; they do not
-    establish that an effect exists.
+ CpG site and the expression of a nearby gene, for CpGs that have no measured
+ expression quantitative trait methylation (eQTM) record. Predictions come
+ from a precomputed table of 3,105,697 CpG-gene pairs covering 761,445 CpGs,
+ assembled from four sources of evidence: directly measured eQTMs, summary-data
+ Mendelian randomisation using genetic instruments, gradient-boosted models of
+ genomic context and local catalogue structure fitted separately in blood,
+ nasal epithelium and solid tissue, and a distance prior. Each call returns a
+ direction, a calibrated probability, an evidence tier and an expected
+ accuracy, and abstains where the evidence is insufficient. Predictions
+ estimate direction conditional on the CpG being an eQTM; they do not
+ establish that an effect exists.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.6.0)
 Imports: data.table (>= 1.14.0), utils, stats,
-    TxDb.Hsapiens.UCSC.hg19.knownGene,
-    org.Hs.eg.db,
-    GenomicFeatures,
-    GenomicRanges,
-    AnnotationDbi
-Suggests: testthat (>= 3.0.0), gt (>= 0.9.0), knitr, rmarkdown,
+ TxDb.Hsapiens.UCSC.hg19.knownGene,
+ org.Hs.eg.db,
+ GenomicFeatures,
+ GenomicRanges,
+ AnnotationDbi,
     cpgdirectionData
+Suggests: testthat (>= 3.0.0), gt (>= 0.9.0), knitr, rmarkdown
 VignetteBuilder: knitr
 biocViews: DNAMethylation, GeneExpression, GeneRegulation, GeneTarget,
-    Epigenetics, Annotation
+ Epigenetics, Annotation
 LazyData: false
 URL: https://github.com/teindor/cpgdirection,
-    https://doi.org/10.17605/OSF.IO/U3VFK
+ https://doi.org/10.17605/OSF.IO/U3VFK
 BugReports: https://github.com/teindor/cpgdirection/issues
 Config/roxygen2/version: 8.1.0

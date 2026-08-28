@@ -57,7 +57,14 @@ stopifnot(!anyDuplicated(CPGD_EVIDENCE))
 # Accepts a character vector, a data.frame, or a path to a text/CSV file.
 # Strips identifiers to their canonical cg form and, for Project Alpha-style
 # column names (cgXXXXXXX_TC21_GENE), parses the gene out of the name.
-.cpgd_parse_input <- function(cpgs, genes = NULL) {
+#
+# `dedupe` controls the cpg_id-only collapse at the end. The legacy one-row-per
+# CpG interfaces keep the historical behaviour (dedupe = TRUE). The pair-
+# preserving workflow (cpg_gene_pairs) MUST pass dedupe = FALSE: collapsing by
+# cpg_id alone folds "cg123_GENE_A" and "cg123_GENE_B" into one row and loses a
+# biological co-effect. The parser parses; it does not decide which biological
+# records are redundant.
+.cpgd_parse_input <- function(cpgs, genes = NULL, dedupe = TRUE) {
 
   given <- NA_character_
   origin <- "none"
@@ -71,7 +78,8 @@ stopifnot(!anyDuplicated(CPGD_EVIDENCE))
     if (!is.na(gc_)) { given <- toupper(trimws(as.character(cpgs[[gc_]]))); origin <- "user" }
   } else if (is.character(cpgs) && length(cpgs) == 1L && file.exists(cpgs)) {
     if (grepl("\\.(csv|tsv)$", cpgs, ignore.case = TRUE)) {
-      return(.cpgd_parse_input(data.table::fread(cpgs, showProgress = FALSE), genes))
+      return(.cpgd_parse_input(data.table::fread(cpgs, showProgress = FALSE), genes,
+                               dedupe = dedupe))
     }
     raw <- trimws(readLines(cpgs, warn = FALSE))
     raw <- raw[nzchar(raw) & !startsWith(raw, "#")]
@@ -134,16 +142,22 @@ stopifnot(!anyDuplicated(CPGD_EVIDENCE))
   d <- data.table::data.table(input = raw, cpg_id = cpg,
                               given_gene = gene, given_gene2 = gene2,
                               gene_origin = origin)
+  # Position of the row in the caller's input, assigned BEFORE any row is
+  # removed or collapsed, so every surviving row can be traced back to the
+  # physical input column it came from.
+  d[, "input_id" := .I]
   d <- d[!is.na(d$cpg_id), ]
   for (col in c("given_gene", "given_gene2")) {
     bad <- which(d[[col]] %in% c("", "NA", "NAN", "NONE"))
     if (length(bad)) data.table::set(d, i = bad, j = col, value = NA_character_)
   }
   # A panel can carry the same probe several times under different suffixes
-  # (cg09527270_TC11 / _TC12 / _TC13). Deduplicate, but record the raw count so
-  # callers can say how many inputs collapsed rather than losing them silently.
+  # (cg09527270_TC11 / _TC12 / _TC13). The legacy interfaces deduplicate, but
+  # record the raw count so callers can say how many inputs collapsed rather
+  # than losing them silently. The pair workflow passes dedupe = FALSE and
+  # receives every parsed row.
   n_raw <- nrow(d)
-  d <- unique(d, by = "cpg_id")
+  if (isTRUE(dedupe)) d <- unique(d, by = "cpg_id")
   data.table::setattr(d, "n_raw", n_raw)
   d
 }

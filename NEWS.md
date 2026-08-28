@@ -1,3 +1,89 @@
+# cpgdirection 2.5.0
+
+* **The mapping database is now multi-source, cross-validated, and
+  probe-QC-aware.** A CpG assigned to the wrong gene poisons every downstream
+  direction, so the annotation attacks mis-assignment from several independent
+  angles at once.
+
+  - The packaged EPIC v2 probe-to-gene table is rebuilt as the UNION of five
+    annotation tracks -- Illumina UCSC_RefGene, Illumina GencodeV41, the Zhou
+    lab (SeSAMe) transcript-aware GENCODE v41 annotation, the Exeter GENCODE 47
+    re-annotation (Mallabar-Rimmer et al. 2025, Zenodo 15181885), and the
+    Exeter distance-based regulatory assignments (Promoter_2000bp /
+    Enhancer_5000bp, with an In_GeneHancer flag). Coverage grows from 349,835
+    to 791,550 CpGs with at least one gene (996,697 CpG-gene pairs, 38,950
+    genes). Every pair carries per-track support flags and
+    `n_annotation_sources`; 84.4% of pairs are corroborated by >= 2
+    independent tracks and 54.8% by >= 3. `zhou_dist_tss` records the signed
+    distance to the nearest annotated TSS of the assigned gene.
+  - NEW probe QC resource and accessor `cpgd_probe_qc()`, from three
+    independent angles: the Zhou general mask (degenerate/non-unique mapping,
+    SNP-contaminated extension base) collapsed to CpG level over replicate
+    probes; the Garvan experimental evidence (Peters et al. 2024, BMC
+    Genomics) -- WGBS-confirmed cross-hybridization, BLAT-predicted
+    off-targets, mapping mismatches; and an independent verification of the
+    packaged hg19 coordinates against the Zhou hg19 manifest (99.5% exact;
+    3,632 CpGs flagged unverified). The two cross-hybridization angles
+    corroborate each other: 7,535 of the 11,754 WGBS-confirmed off-target
+    CpGs are also sequence-masked by Zhou, and each catches probes the other
+    misses.
+  - `cpg_gene_pairs()` gains `probe_qc = c("exclude", "flag", "ignore")`.
+    Default `"exclude"`: the 35,657 CpGs (3.85%) whose EVERY replicate probe
+    is Zhou-masked or WGBS-confirmed cross-hybridizing (`qc_exclude`) are
+    dropped -- a probe reading the wrong locus is the one failure no
+    direction evidence can repair -- with the exclusions reported, listed in
+    `attr(result, "qc_excluded_cpgs")`, and recoverable via
+    `probe_qc = "flag"`. A CpG with at least one clean replicate is kept and
+    flagged `probe_masked_partial` instead. Pair rows carry `probe_masked`,
+    `probe_mask_reasons`, `cross_hybridizing`, `mapping_flagged` and
+    `pos_hg19_verified`.
+
+* Annotation provenance and probe reliability remain SEPARATE facts from
+  direction evidence: `annotation_source`/`n_annotation_sources` say who
+  assigns the gene, `cpgd_probe_qc()` says whether the probe can be trusted,
+  and `best_evidence` says what the direction rests on.
+
+# cpgdirection 2.4.0
+
+* **Automatic CpG-to-gene discovery and a pair-preserving API.** A bare EPIC
+  v2 CpG identifier is now sufficient: `cpg_gene_pairs("cg26261055")`
+  discovers every supported target gene automatically and returns a separate
+  direction/evidence record for every CpG x gene pair.
+
+  - `cpg_gene_pairs()` -- the new many-to-many interface. Candidate targets
+    are the UNION of the packaged EPIC v2 manifest annotation, the tissue
+    catalogue, measured eQTMs and SMR (brain targets on request via
+    `include_brain = TRUE`; genes parsed from input suffixes augment the set
+    by default). Direction is resolved WITHIN each `cpg_id + target_gene`
+    pair by the same evidence ladder as `cpg_expression_direction()`
+    (`.cpgd_resolve_pair_direction()`), so a fixed pair returns the same
+    answer whether the gene came from the manifest, an input suffix, or
+    `genes=`. Opposite directions across a CpG's genes are retained;
+    abstention is pair-specific.
+  - `genes = NULL` means auto-discover, never "cannot calculate direction".
+    `genes` with `gene_mode = "filter"` (default) restricts discovered
+    targets; `gene_mode = "pairwise"` evaluates explicit `cpgs[i] x genes[i]`
+    hypotheses. The mode is never inferred from vector lengths.
+  - `cpgd_manifest_genes()` -- new packaged long-form EPIC v2 probe-to-gene
+    annotation (402,098 CpG-gene rows, 349,835 CpGs, 29,175 genes) built from
+    the official Illumina EPIC-8v2-0 manifest RefGene fields; every
+    semicolon-delimited gene becomes its own row, never just the first.
+    `cpgd_build_manifest_genes()` rebuilds it from a manifest CSV. Manifest
+    annotation is a mapping source, not proof of regulation, and its
+    provenance stays distinct from measured/SMR evidence.
+  - Mapping provenance (`mapping_sources`, `mapping_primary`,
+    `mapping_strength`, `has_*`) is kept separate from direction evidence
+    (`best_evidence`, `direction_tier`) on every row.
+
+* The input parser gained `input_id` and a `dedupe` argument. The legacy
+  one-row-per-CpG interfaces still collapse technical replicates by `cpg_id`;
+  the pair workflow parses every row and never deduplicates by `cpg_id`
+  alone, so `cg123_GENE_A` and `cg123_GENE_B` both survive.
+
+* `cpg_expression_direction()` is unchanged and remains the convenience
+  one-result-per-CpG interface; its documentation now points many-to-many
+  consumers (DMSA included) at `cpg_gene_pairs()`.
+
 # cpgdirection 2.3.0
 
 * **The brain bridge.** Three new data layers and one user-facing function

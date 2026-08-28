@@ -120,6 +120,58 @@ columns:
 cpg_expression_direction("my_cpgs.txt")
 ```
 
+## Every target gene, one row per pair: `cpg_gene_pairs()`
+
+A CpG is not obliged to regulate one gene, and 20.3% of CpGs with measured
+evidence associate with more than one. `cpg_gene_pairs()` is the
+pair-preserving interface: give it **bare** CpG identifiers and it discovers
+every plausible target automatically -- from the packaged EPIC v2 manifest
+annotation, the tissue catalogue, measured eQTMs and SMR -- then resolves
+direction and evidence separately for every CpG x gene pair.
+
+```r
+pairs <- cpg_gene_pairs(c("cg26261055", "cg06495038", "cg26196496"))
+
+pairs[, .(cpg_id, target_gene, mapping_primary, best_direction, best_evidence)]
+#>        cpg_id target_gene mapping_primary best_direction  best_evidence
+#>    cg26261055       CRHBP EPICv2_manifest             -1  distance_only
+#>    ...
+```
+
+You never have to supply a gene. `genes = NULL` means *auto-discover all
+supported targets*; writing `"cg26261055_CRHBP"` or passing `genes=` is an
+optional way to add or restrict a hypothesis, not a requirement:
+
+```r
+# restrict discovered targets to a biological gene set (what DMSA does)
+cpg_gene_pairs(my_cpgs, genes = my_gene_set, gene_mode = "filter")
+
+# evaluate explicit CpG-gene hypotheses, element by element
+cpg_gene_pairs(my_cpgs, genes = my_genes, gene_mode = "pairwise")
+```
+
+The mapping layer itself is multi-source and cross-validated: candidate genes
+come from the union of five annotation tracks (Illumina UCSC RefGene and
+GencodeV41, the Zhou lab GENCODE v41 transcript annotation, and the Exeter
+GENCODE 47 re-annotation including its regulatory-element assignments), and
+every pair records which tracks support it (`n_annotation_sources`; 84% of
+pairs have two or more). Probe reliability is checked separately: CpGs whose
+every replicate probe is flagged as cross-hybridizing, degenerately mapped or
+SNP-contaminated are excluded by default (`probe_qc = "exclude"`, 3.4% of the
+array), because a probe that reads the wrong locus cannot be rescued by any
+direction evidence downstream.
+
+Two facts are kept apart on every row: `mapping_sources` says how the gene
+entered the candidate set (manifest annotation is *annotation*, not proof of
+regulation), and `best_evidence` says what the direction rests on -- resolved
+by the same evidence ladder as `cpg_expression_direction()`, strictly within
+the pair. Opposite directions for different genes of one CpG are both
+retained, and abstention is pair-specific. For a fixed pair the direction
+record is invariant to how the gene was discovered.
+
+`cpg_expression_direction()` is unchanged: it remains the convenience
+one-result-per-CpG interface.
+
 ## What you get back
 
 One row per CpG:

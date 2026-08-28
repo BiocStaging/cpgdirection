@@ -17,6 +17,14 @@
 #' Passing a specific \code{tissue} instead returns the single-tissue result,
 #' with the column set documented under \emph{Value} in earlier versions.
 #'
+#' \strong{One row per CpG, by design.} \code{cpg_expression_direction()} is
+#' the convenience one-result-per-CpG interface: it returns one requested/best
+#' target per CpG. For automatic discovery of every supported target/co-effect
+#' and pair-specific direction evidence, use \code{\link{cpg_gene_pairs}} --
+#' a CpG can have several target genes, with legitimately opposite directions,
+#' and this interface by construction shows only one of them. DMSA and any
+#' other many-to-many consumer must use the pair API.
+#'
 #' @param cpgs Character vector of CpG identifiers, with or without suffixes.
 #'   A single file path to a text or CSV file is also accepted.
 #' @param genes Optional character vector of target genes, the same length as
@@ -848,4 +856,388 @@ print.cpgd_full <- function(x, ...) {
   print(utils::head(as.data.frame(x[, cols, with = FALSE]), 10))
   if (nrow(x) > 10) cat(sprintf("... %d more rows\n", nrow(x) - 10))
   invisible(x)
+}
+
+
+# ---------------------------------------------------------------------------
+# Pair-level direction resolution (2.4.0).
+#
+# The evidence ladder above decides ONE direction per CpG, choosing a target
+# gene along the way. The pair workflow asks a different question: for a fixed
+# cpg_id + target_gene pair, what direction does the evidence support? This
+# resolver applies the SAME precedence as cpg_expression_direction() --
+# measured > smr_high (S1) > catalogue_consensus > smr_moderate (S2) >
+# catalogue_single > smr_weak (S3) > tissue_conflict > distance -- but keyed
+# strictly on cpg_id + target_gene: no source may promote evidence that
+# concerns a different target gene into a pair's best_direction. The result
+# for a fixed pair is therefore invariant to HOW the gene entered the
+# candidate set (manifest discovery, an input suffix, or an explicit genes=).
+# ---------------------------------------------------------------------------
+
+# `pairs`: data.table with cpg_id + target_gene (one row per pair).
+# `sources`: optional named list overriding the packaged resources, for tests
+#   and advanced use: measured, smr, lookup (a named list by tissue, or a
+#   single table applied to `tissue`), cpg_pos, gene_tss, distance_curves.
+# Returns `pairs` with the direction/evidence columns appended.
+.cpgd_resolve_pair_direction <- function(pairs,
+                                         tissue = "blood",
+                                         sources = NULL,
+                                         universal = TRUE,
+                                         min_tissues = 2L,
+                                         min_confidence = NULL,
+                                         min_distance_info = 0.02) {
+  P <- data.table::copy(data.table::as.data.table(pairs))
+  stopifnot(all(c("cpg_id", "target_gene") %in% names(P)))
+  P <- unique(P, by = c("cpg_id", "target_gene"))
+  # Genes are matched case-insensitively and with dash/underscore equivalence,
+  # because catalogue spellings use dashes where panel names use underscores.
+  P[, ".gkey" := gsub("_", "-", toupper(get("target_gene")))]
+  n <- nrow(P)
+
+  thrA <- if (is.null(min_confidence)) 0.30 else min_confidence
+  thrB <- if (is.null(min_confidence)) 0.50 else min_confidence
+
+  # ---- measured eQTMs, this pair only ------------------------------------
+  M <- .cpgd_source_table(sources, "measured", cpgd_measured_eqtms)
+  if (!is.null(M) && nrow(M)) {
+    MM <- data.table::data.table(
+      cpg_id = M$cpg_id,
+      .gkey  = gsub("_", "-", toupper(M$target_gene)),
+      d      = sign(as.numeric(M$direction)),
+      tis    = as.character(M$tissue))
+    MM <- MM[, list(
+      d   = if (length(unique(get("d"))) == 1L) get("d")[1] else NA_real_,
+      tis = paste(sort(unique(get("tis"))), collapse = ";")),
+      by = c("cpg_id", ".gkey")]
+    data.table::setkeyv(MM, c("cpg_id", ".gkey"))
+    hit <- MM[P[, c("cpg_id", ".gkey"), with = FALSE], on = c("cpg_id", ".gkey")]
+    P[, "measured_direction" := hit$d]
+    P[, "measured_tissues"   := hit$tis]
+  } else {
+    P[, c("measured_direction", "measured_tissues") :=
+        list(NA_real_, NA_character_)]
+  }
+
+  # ---- SMR, this pair only ------------------------------------------------
+  S <- .cpgd_source_table(sources, "smr", cpgd_smr_directions)
+  if (!is.null(S) && nrow(S)) {
+    hs <- if ("heidi_status" %in% names(S)) as.character(S$heidi_status)
+          else rep(NA_character_, nrow(S))
+    ph <- if ("p_HEIDI" %in% names(S)) suppressWarnings(as.numeric(S$p_HEIDI))
+          else rep(NA_real_, nrow(S))
+    ia <- if ("instrument_agreement" %in% names(S))
+            suppressWarnings(as.numeric(S$instrument_agreement))
+          else rep(NA_real_, nrow(S))
+    SS <- data.table::data.table(
+      cpg_id = S$cpg_id,
+      .gkey  = gsub("_", "-", toupper(S$target_gene)),
+      d = as.numeric(S$direction), tier = as.character(S$smr_tier),
+      p = as.numeric(S$p_SMR), ni = as.integer(S$n_instruments),
+      ia = ia, hstat = hs, pheidi = ph)
+    # one row per pair: strongest tier, then smallest p -- same rule as the
+    # CpG-level ladder uses
+    data.table::setorderv(SS, c("cpg_id", ".gkey", "tier", "p"))
+    SS <- SS[, .SD[1L], by = c("cpg_id", ".gkey")]
+    data.table::setkeyv(SS, c("cpg_id", ".gkey"))
+    hit <- SS[P[, c("cpg_id", ".gkey"), with = FALSE], on = c("cpg_id", ".gkey")]
+    P[, "smr_direction"        := hit$d]
+    P[, "smr_tier"             := hit$tier]
+    P[, "p_SMR"                := hit$p]
+    P[, "n_instruments"        := hit$ni]
+    P[, "instrument_agreement" := hit$ia]
+    P[, "p_HEIDI"              := hit$pheidi]
+    P[, "heidi_status"         := hit$hstat]
+  } else {
+    P[, c("smr_direction", "smr_tier", "p_SMR", "n_instruments",
+          "instrument_agreement", "p_HEIDI", "heidi_status") :=
+        list(NA_real_, NA_character_, NA_real_, NA_integer_, NA_real_,
+             NA_real_, NA_character_)]
+  }
+
+  # ---- catalogue models, per tissue, this pair only ----------------------
+  short <- c(blood = "blood", nasal_epithelium = "nasal", solid_tissue = "solid")
+  for (t in CPGD_TISSUES) {
+    s <- short[[t]]
+    L <- .cpgd_source_lookup(sources, t, selected = tissue)
+    if (is.null(L) || !nrow(L)) {
+      P[, (paste0("cat_dir_",  s)) := NA_real_]
+      P[, (paste0("cat_conf_", s)) := NA_real_]
+      P[, (paste0("cat_tier_", s)) := NA_character_]
+      P[, (paste0("cat_prob_", s)) := NA_real_]
+      P[, (paste0("cat_status_", s)) := NA_character_]
+      next
+    }
+    LL <- data.table::data.table(
+      cpg_id = L$cpg_id,
+      .gkey  = gsub("_", "-", toupper(L$target_gene)),
+      d = suppressWarnings(as.numeric(L$direction)),
+      pr = suppressWarnings(as.numeric(L$probability_plus1)),
+      cf = suppressWarnings(as.numeric(L$confidence)),
+      ti = as.character(L$evidence_tier),
+      st = as.character(L$status))
+    # a catalogue can hold several rows for one pair; keep the most confident
+    data.table::setorderv(LL, c("cpg_id", ".gkey", "cf"), order = c(1L, 1L, -1L))
+    LL <- LL[, .SD[1L], by = c("cpg_id", ".gkey")]
+    data.table::setkeyv(LL, c("cpg_id", ".gkey"))
+    hit <- LL[P[, c("cpg_id", ".gkey"), with = FALSE], on = c("cpg_id", ".gkey")]
+    # the same call rule as .cpgd_one_tissue(): tier A calls at conf >= thrA,
+    # tier B at conf >= thrB, tier C abstains; DIRECT_eQTM rows always call
+    call <- data.table::fcase(
+      is.na(hit$d), NA_real_,
+      hit$st == "DIRECT_eQTM", hit$d,
+      hit$ti == "A" & !is.na(hit$cf) & hit$cf >= thrA, hit$d,
+      hit$ti == "B" & !is.na(hit$cf) & hit$cf >= thrB, hit$d,
+      default = NA_real_)
+    P[, (paste0("cat_dir_",  s)) := call]
+    P[, (paste0("cat_conf_", s)) := hit$cf]
+    P[, (paste0("cat_tier_", s)) := hit$ti]
+    P[, (paste0("cat_prob_", s)) := hit$pr]
+    P[, (paste0("cat_status_", s)) := hit$st]
+  }
+
+  D  <- as.matrix(P[, paste0("cat_dir_",  short), with = FALSE])
+  Cf <- as.matrix(P[, paste0("cat_conf_", short), with = FALSE])
+  Pr <- as.matrix(P[, paste0("cat_prob_", short), with = FALSE])
+  TT <- as.matrix(P[, paste0("cat_tier_", short), with = FALSE])
+  n_call <- rowSums(!is.na(D))
+  n_pos  <- rowSums(D ==  1, na.rm = TRUE)
+  n_neg  <- rowSums(D == -1, na.rm = TRUE)
+  agree  <- ifelse(n_call > 0, pmax(n_pos, n_neg) / n_call, NA_real_)
+  cons   <- ifelse(n_call >= min_tissues & agree == 1,
+                   ifelse(n_pos > n_neg, 1, -1), NA_real_)
+  single <- vapply(seq_len(n), function(i) {
+    v <- D[i, ][!is.na(D[i, ])]
+    if (length(v) == 1L) v[1] else NA_real_
+  }, numeric(1))
+  conf_cat <- vapply(seq_len(n), function(i) {
+    v <- Cf[i, ][!is.na(D[i, ])]
+    v <- v[!is.na(v)]
+    if (!length(v)) NA_real_ else mean(v)
+  }, numeric(1))
+  prob_cat <- vapply(seq_len(n), function(i) {
+    v <- Pr[i, ][!is.na(D[i, ])]
+    v <- v[!is.na(v)]
+    if (!length(v)) NA_real_ else mean(v)
+  }, numeric(1))
+  worst_tier <- vapply(seq_len(n), function(i) {
+    v <- TT[i, ][!is.na(D[i, ])]
+    v <- v[!is.na(v)]
+    if (!length(v)) NA_character_ else max(v)
+  }, character(1))
+  P[, "n_tissues_calling" := n_call]
+  P[, "tissue_agreement"  := round(agree, 3)]
+
+  # selected-tissue audit columns, named as the spec's pair schema expects
+  ssel <- short[[tissue]]
+  P[, "lookup_direction"         := P[[paste0("cat_dir_",  ssel)]]]
+  P[, "lookup_probability_plus1" := P[[paste0("cat_prob_", ssel)]]]
+  P[, "lookup_confidence"        := P[[paste0("cat_conf_", ssel)]]]
+  P[, "lookup_evidence_tier"     := P[[paste0("cat_tier_", ssel)]]]
+
+  # ---- distance, this pair only ------------------------------------------
+  dist_p <- .cpgd_pair_distance(P, sources = sources, universal = universal)
+  P[, "abs_dist"       := dist_p$abs_dist]
+  P[, "p_universal"    := dist_p$p_universal]
+  P[, "dir_universal"  := dist_p$dir_universal]
+  P[, "dist_unanimous" := dist_p$dist_unanimous]
+  P[, "dist_dir_blood" := dist_p$dist_dir_blood]
+  P[, "dist_dir_nasal" := dist_p$dist_dir_nasal]
+  P[, "dist_dir_solid" := dist_p$dist_dir_solid]
+
+  # ---- the ladder, unchanged in order, applied within the pair -----------
+  best <- rep(NA_real_, n)
+  src  <- rep(NA_character_, n)
+
+  i <- which(!is.na(P$measured_direction))
+  best[i] <- P$measured_direction[i];  src[i] <- "measured"
+
+  smr_ok <- !is.na(P$smr_direction)
+  i <- which(is.na(src) & smr_ok & P$smr_tier == "S1")
+  best[i] <- P$smr_direction[i];       src[i] <- "smr_high"
+
+  i <- which(is.na(src) & !is.na(cons))
+  best[i] <- cons[i];                  src[i] <- "catalogue_consensus"
+
+  i <- which(is.na(src) & smr_ok & P$smr_tier == "S2")
+  best[i] <- P$smr_direction[i];       src[i] <- "smr_moderate"
+
+  i <- which(is.na(src) & n_call == 1L & !is.na(single))
+  best[i] <- single[i];                src[i] <- "catalogue_single"
+
+  i <- which(is.na(src) & smr_ok & P$smr_tier == "S3")
+  best[i] <- P$smr_direction[i];       src[i] <- "smr_weak"
+
+  i <- which(is.na(src) & n_call >= 2L & !is.na(agree) & agree < 1)
+  src[i] <- "tissue_conflict"
+
+  i <- which(is.na(src) & P$dist_unanimous %in% TRUE &
+               !is.na(P$dir_universal) &
+               abs(P$p_universal - 0.5) * 2 >= min_distance_info)
+  best[i] <- P$dir_universal[i];       src[i] <- "distance_only"
+
+  i <- which(is.na(src) & P$dist_unanimous %in% TRUE)
+  src[i] <- "distance_uninformative"
+
+  i <- which(is.na(src) & !is.na(P$abs_dist))
+  src[i] <- "distance_tissue_conflict"
+
+  src[is.na(src)] <- "no_evidence"
+
+  bconf <- rep(NA_real_, n)
+  bconf[which(src == "measured")] <- 1
+  i <- which(src %in% c("catalogue_consensus", "catalogue_single"))
+  bconf[i] <- round(conf_cat[i], 4)
+  i <- which(src == "distance_only")
+  bconf[i] <- round(abs(P$p_universal[i] - 0.5) * 2, 4)
+
+  prob <- rep(NA_real_, n)
+  i <- which(src %in% c("catalogue_consensus", "catalogue_single"))
+  prob[i] <- round(prob_cat[i], 4)
+  i <- which(src %in% c("distance_only", "distance_uninformative"))
+  prob[i] <- P$p_universal[i]
+  i <- which(src == "measured")
+  prob[i] <- ifelse(best[i] > 0, 1, 0)
+
+  tier <- worst_tier
+  tier[which(src == "measured")] <- "M"
+  i <- which(src %in% c("smr_high", "smr_moderate", "smr_weak"))
+  tier[i] <- P$smr_tier[i]
+  tier[which(src %in% c("distance_only", "distance_uninformative",
+                        "distance_tissue_conflict"))] <- "U"
+
+  bacc <- rep(NA_character_, n)
+  bacc[which(src == "measured")]     <- "~1.00 (measured, not predicted)"
+  bacc[which(src == "smr_high")]     <- "0.95-0.97 (SMR tier S1, concordant instruments; validated n=2,141)"
+  bacc[which(src == "smr_moderate")] <- "0.84-0.86 (SMR tier S2, single instrument; validated n=6,008)"
+  bacc[which(src == "smr_weak")]     <- "0.66-0.75 (SMR tier S3, instruments disagree; validated n=456)"
+  bacc[which(src == "catalogue_consensus" & worst_tier == "A")] <- "0.77-0.87 (tier A, tissues agree)"
+  bacc[which(src == "catalogue_consensus" & worst_tier == "B")] <- "0.64-0.84 (tier B, tissues agree)"
+  bacc[which(src == "catalogue_single"    & worst_tier == "A")] <- "0.62-0.87 (tier A, one tissue only)"
+  bacc[which(src == "catalogue_single"    & worst_tier == "B")] <- "0.55-0.84 (tier B, one tissue only)"
+  bacc[which(src == "distance_only")] <- "0.60-0.65 (distance only, tier U)"
+
+  P[, "best_direction"  := best]
+  P[, "best_evidence"   := src]
+  P[, "best_confidence" := bconf]
+  P[, "direction_tier"  := tier]
+  P[, "probability_plus1" := prob]
+  P[, "best_expected_accuracy" := bacc]
+  P[, "usable" := !is.na(best)]
+  P[, "abstain_reason" := data.table::fcase(
+      !is.na(best), "",
+      src == "tissue_conflict", "catalogue tissues returned opposite directions; not resolved",
+      src == "distance_uninformative", "distance curves agree in sign but sit on 0.5; no usable signal",
+      src == "distance_tissue_conflict", "distance curves disagree by tissue - see dist_dir_blood/_nasal/_solid",
+      src == "no_evidence", "no direction evidence held for this CpG-gene pair",
+      default = "no direction evidence held for this CpG-gene pair")]
+  P[, ".gkey" := NULL]
+  P
+}
+
+
+# Resolve a source table override, falling back to the packaged resource.
+# Failure to load a packaged resource degrades to NULL: a missing optional
+# layer must weaken the answer, not kill the call.
+.cpgd_source_table <- function(sources, name, default_fn) {
+  if (!is.null(sources) && name %in% names(sources)) {
+    v <- sources[[name]]
+    if (is.null(v)) return(NULL)
+    return(data.table::as.data.table(v))
+  }
+  tryCatch(default_fn(), error = function(e) NULL)
+}
+
+# The lookup override may be a named list by tissue, or a single table taken
+# to be the SELECTED tissue's catalogue (the other tissues then contribute
+# nothing, which is what a single-tissue fixture intends).
+.cpgd_source_lookup <- function(sources, t, selected = "blood") {
+  if (!is.null(sources) && "lookup" %in% names(sources)) {
+    lk <- sources$lookup
+    if (is.null(lk)) return(NULL)
+    if (is.data.frame(lk)) {
+      if (identical(t, selected)) return(data.table::as.data.table(lk))
+      return(NULL)
+    }
+    if (!is.null(lk[[t]])) return(data.table::as.data.table(lk[[t]]))
+    return(NULL)
+  }
+  tryCatch(.cpgd_lookup(t), error = function(e) NULL)
+}
+
+
+# Distance layer for explicit pairs: hg19 CpG position against the gene TSS,
+# scored on the three packaged distance curves with the same unanimity rule as
+# the CpG-level ladder. Anything unavailable (annotation packages, positions,
+# the gene itself) degrades to NA columns rather than an error.
+.cpgd_pair_distance <- function(P, sources = NULL, universal = TRUE,
+                                max_dist = 1e6) {
+  blank <- data.table::data.table(
+    abs_dist = rep(NA_real_, nrow(P)), p_universal = NA_real_,
+    dir_universal = NA_real_, dist_unanimous = NA,
+    dist_dir_blood = NA_real_, dist_dir_nasal = NA_real_,
+    dist_dir_solid = NA_real_)
+  if (!isTRUE(universal)) return(blank)
+
+  G <- .cpgd_source_table(sources, "gene_tss", cpgd_gene_tss)
+  Cp <- .cpgd_source_table(sources, "cpg_pos", cpgd_cpg_positions)
+  K <- .cpgd_source_table(sources, "distance_curves", function() {
+    data.table::fread(system.file("extdata", "distance_curves.csv",
+                                  package = "cpgdirection"), showProgress = FALSE)
+  })
+  if (is.null(G) || is.null(Cp) || is.null(K)) return(blank)
+  if (!all(c("gene", "chr", "tss") %in% names(G))) return(blank)
+
+  G <- data.table::as.data.table(G)
+  G[, ".gkey" := gsub("_", "-", toupper(get("gene")))]
+  G <- unique(G, by = ".gkey")
+  Cp <- data.table::as.data.table(Cp)
+  names(Cp) <- tolower(names(Cp))
+  if (!all(c("cpg_id", "chr", "pos") %in% names(Cp))) return(blank)
+
+  q <- data.table::data.table(cpg_id = P$cpg_id,
+                              .gkey = gsub("_", "-", toupper(P$target_gene)))
+  q[, ".row" := .I]
+  q <- merge(q, Cp[, c("cpg_id", "chr", "pos"), with = FALSE],
+             by = "cpg_id", all.x = TRUE, sort = FALSE)
+  q <- merge(q, G[, c(".gkey", "chr", "tss"), with = FALSE],
+             by = ".gkey", all.x = TRUE, sort = FALSE,
+             suffixes = c("", "_gene"))
+  q[, "abs_dist" := ifelse(!is.na(get("chr")) & !is.na(get("chr_gene")) &
+                             get("chr") == get("chr_gene"),
+                           abs(as.numeric(get("pos")) - as.numeric(get("tss"))),
+                           NA_real_)]
+  q[which(get("abs_dist") > max_dist), "abs_dist" := NA_real_]
+  data.table::setorderv(q, ".row")
+
+  out <- blank
+  out[, "abs_dist" := q$abs_dist]
+  short <- c(blood = "blood", nasal_epithelium = "nasal", solid_tissue = "solid")
+  pm <- matrix(NA_real_, nrow = nrow(q), ncol = 3,
+               dimnames = list(NULL, unname(short)))
+  ok <- !is.na(q$abs_dist)
+  if (any(ok)) {
+    for (t in names(short)) {
+      k <- K[K$tissue == t, ]
+      if (!nrow(k)) next
+      pm[ok, short[[t]]] <- stats::approx(
+        log10(pmax(k$dist_mid, 1)), k$p_positive,
+        xout = log10(pmax(q$abs_dist[ok], 1)), rule = 2)$y
+    }
+  }
+  nval <- rowSums(!is.na(pm))
+  npos <- rowSums(pm >= 0.5, na.rm = TRUE)
+  pmean <- ifelse(nval > 0, rowMeans(pm, na.rm = TRUE), NA_real_)
+  unan <- nval > 0L & (npos == nval | npos == 0L)
+  out[, "p_universal"    := round(pmean, 4)]
+  out[, "dist_unanimous" := ifelse(nval > 0L, unan, NA)]
+  out[, "dir_universal"  := ifelse(unan & !is.na(pmean),
+                                   ifelse(npos == nval & nval > 0L, 1, -1),
+                                   NA_real_)]
+  out[, "dist_dir_blood" := ifelse(is.na(pm[, "blood"]), NA_real_,
+                                   ifelse(pm[, "blood"] >= 0.5, 1, -1))]
+  out[, "dist_dir_nasal" := ifelse(is.na(pm[, "nasal"]), NA_real_,
+                                   ifelse(pm[, "nasal"] >= 0.5, 1, -1))]
+  out[, "dist_dir_solid" := ifelse(is.na(pm[, "solid"]), NA_real_,
+                                   ifelse(pm[, "solid"] >= 0.5, 1, -1))]
+  out
 }

@@ -122,6 +122,14 @@ Three sources are consulted, in this order:
 
 Passing a specific \code{tissue} instead returns the single-tissue result,
 with the column set documented under \emph{Value} in earlier versions.
+
+\strong{One row per CpG, by design.} \code{cpg_expression_direction()} is
+the convenience one-result-per-CpG interface: it returns one requested/best
+target per CpG. For automatic discovery of every supported target/co-effect
+and pair-specific direction evidence, use \code{\link{cpg_gene_pairs}} --
+a CpG can have several target genes, with legitimately opposite directions,
+and this interface by construction shows only one of them. DMSA and any
+other many-to-many consumer must use the pair API.
 }
 \section{The two alternative codings}{
 

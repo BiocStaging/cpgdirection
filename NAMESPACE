@@ -2,22 +2,27 @@
 
 S3method(print,cpgd_bridge)
 S3method(print,cpgd_full)
+S3method(print,cpgd_pairs)
 S3method(print,cpgd_result)
 S3method(summary,cpgd_result)
 export(cpg_brain_bridge)
 export(cpg_direction_all_tissues)
 export(cpg_direction_universal)
 export(cpg_expression_direction)
+export(cpg_gene_pairs)
 export(cpgd_accuracy_table)
 export(cpgd_brain_directions)
 export(cpgd_bridge_deliverable)
 export(cpgd_build_gene_tss)
+export(cpgd_build_manifest_genes)
 export(cpgd_cpg_positions)
 export(cpgd_direction_balance)
 export(cpgd_gene_tss)
 export(cpgd_lookup_info)
+export(cpgd_manifest_genes)
 export(cpgd_measured_eqtms)
 export(cpgd_parse_check)
+export(cpgd_probe_qc)
 export(cpgd_report)
 export(cpgd_selftest)
 export(cpgd_smr_directions)
@@ -25,6 +30,8 @@ importFrom(TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg19.knownGene)
 importFrom(data.table,
   "%chin%",
   ":=",
+  .I,
+  .N,
   .SD,
   fcase,
   fifelse,

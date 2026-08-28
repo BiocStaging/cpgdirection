@@ -14,7 +14,7 @@
 #' honest and enough to satisfy it.
 #'
 #' @keywords internal
-#' @importFrom data.table := .SD fifelse fcase setorderv %chin%
+#' @importFrom data.table := .SD .I .N fifelse fcase setorderv %chin%
 #' @importFrom TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg19.knownGene
 #' @importFrom org.Hs.eg.db org.Hs.eg.db
 "_PACKAGE"

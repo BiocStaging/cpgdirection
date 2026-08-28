@@ -30,11 +30,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Tsachi Ein-Dor \email{teindor@runi.ac.il}
+\strong{Maintainer}: Tsachi Ein-Dor \email{teindor@runi.ac.il} (\href{https://orcid.org/0000-0002-3078-7591}{ORCID}) [funder]
 
 Authors:
 \itemize{
-  \item Tsachi Ein-Dor \email{teindor@runi.ac.il}
+  \item Tsachi Ein-Dor \email{teindor@runi.ac.il} (\href{https://orcid.org/0000-0002-3078-7591}{ORCID}) [funder]
 }
 
 }

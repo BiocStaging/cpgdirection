@@ -62,7 +62,7 @@ Read the gene columns, not just the direction.
 }
 
 \examples{
-\donttest{
-res <- cpg_direction_all_tissues(c("cg00050692", "cg00000029"))
-}
+res <- cpg_direction_all_tissues(c("cg00050692", "cg00000029"),
+                                 verbose = FALSE)
+res[, c("cpg_id", "best_direction", "best_evidence"), with = FALSE]
 }

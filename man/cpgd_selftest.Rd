@@ -26,7 +26,5 @@ gate the result, because it is the sign of the probability and would only
 restate it.
 }
 \examples{
-\donttest{
 cpgd_selftest()
-}
 }

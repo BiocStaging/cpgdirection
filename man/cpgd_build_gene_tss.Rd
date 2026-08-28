@@ -41,8 +41,8 @@ fields are convenient but give a gene \emph{region} label per probe rather
 than a TSS, so distances derived from it are cruder.
 }
 \examples{
-\dontrun{
-# BiocManager::install(c("TxDb.Hsapiens.UCSC.hg19.knownGene", "org.Hs.eg.db"))
-cpgd_build_gene_tss()
+\donttest{
+# needs TxDb.Hsapiens.UCSC.hg19.knownGene and org.Hs.eg.db
+cpgd_build_gene_tss(out = tempfile(fileext = ".csv"))
 }
 }

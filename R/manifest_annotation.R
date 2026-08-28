@@ -64,21 +64,12 @@
 #'   \code{zhou_tx_types}, \code{manifest_probe_id}, \code{chr},
 #'   \code{position} and \code{strand}.
 #' @examples
-#' \donttest{
 #' m <- cpgd_manifest_genes()
-#' m[cpg_id == "cg26261055"]   # CRHBP, 4 independent sources, TSS -899 bp
-#' }
+#' m[m$cpg_id == "cg26261055", ]   # CRHBP, 4 independent sources, TSS -899 bp
 #' @export
 cpgd_manifest_genes <- function() {
   if (!is.null(.cpgd_env$manifest_genes)) return(.cpgd_env$manifest_genes)
-  p <- system.file("extdata", "epicv2_probe_gene_annotation.csv.gz",
-                   package = "cpgdirection")
-  if (!nzchar(p) || !file.exists(p)) {
-    stop("epicv2_probe_gene_annotation.csv.gz is missing from the installed ",
-         "package. Reinstall the package, or rebuild the resource with ",
-         "cpgd_build_manifest_genes().", call. = FALSE)
-  }
-  M <- data.table::fread(p, showProgress = FALSE)
+  M <- .cpgd_data("epicv2_probe_gene_annotation")
   req <- c("cpg_id", "target_gene", "array", "annotation_source", "refgene_group")
   miss <- setdiff(req, names(M))
   if (length(miss)) {
@@ -123,6 +114,16 @@ cpgd_manifest_genes <- function() {
 #'   table the one \code{\link{cpgd_manifest_genes}} serves, overwrite the
 #'   packaged file under \code{inst/extdata/} and reinstall.
 #' @return Invisibly, the path written.
+#' @examples
+#' f <- tempfile(fileext = ".csv")
+#' writeLines(c("[Heading]", "Descriptor File Name,EPIC-8v2-0_TEST",
+#'   "[Assay]",
+#'   "IlmnID,Name,CHR,MAPINFO,Strand_FR,UCSC_RefGene_Name,UCSC_RefGene_Group",
+#'   "cg10000001_TC21,cg10000001,chr1,1000,F,GENEA;GENEB,TSS200;TSS1500",
+#'   "[Controls]", "ctl1,negative,0,0"), f)
+#' out <- tempfile(fileext = ".csv.gz")
+#' cpgd_build_manifest_genes(f, out = out)
+#' read.csv(out)
 #' @export
 cpgd_build_manifest_genes <- function(manifest_file,
                                       out = "epicv2_probe_gene_annotation.csv.gz") {
@@ -285,19 +286,12 @@ cpgd_build_manifest_genes <- function(manifest_file,
 #'   \code{ch_blat_predicted}, \code{mapping_flagged},
 #'   \code{n_offtargets_max}, \code{qc_exclude} and \code{qc_sources}.
 #' @examples
-#' \donttest{
 #' qc <- cpgd_probe_qc()
-#' qc[qc$masked_general == TRUE][1:3]
-#' }
+#' head(qc[qc$masked_general == TRUE, ], 3)
 #' @export
 cpgd_probe_qc <- function() {
   if (!is.null(.cpgd_env$probe_qc)) return(.cpgd_env$probe_qc)
-  p <- system.file("extdata", "epicv2_probe_qc.csv.gz", package = "cpgdirection")
-  if (!nzchar(p) || !file.exists(p)) {
-    stop("epicv2_probe_qc.csv.gz is missing from the installed package. ",
-         "Reinstall the package.", call. = FALSE)
-  }
-  Q <- data.table::fread(p, showProgress = FALSE)
+  Q <- .cpgd_data("epicv2_probe_qc")
   req <- c("cpg_id", "masked_general", "masked_partial", "mask_reasons",
            "pos_hg19_verified")
   miss <- setdiff(req, names(Q))

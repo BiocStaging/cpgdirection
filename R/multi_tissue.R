@@ -40,9 +40,9 @@
 #' Read the gene columns, not just the direction.
 #'
 #' @examples
-#' \donttest{
-#' res <- cpg_direction_all_tissues(c("cg00050692", "cg00000029"))
-#' }
+#' res <- cpg_direction_all_tissues(c("cg00050692", "cg00000029"),
+#'                                  verbose = FALSE)
+#' res[, c("cpg_id", "best_direction", "best_evidence"), with = FALSE]
 #' @export
 cpg_direction_all_tissues <- function(cpgs, genes = NULL, min_tissues = 2L,
                                       allow_nearest_gene = FALSE, verbose = TRUE) {
@@ -67,17 +67,12 @@ cpg_direction_all_tissues <- function(cpgs, genes = NULL, min_tissues = 2L,
 #' @return A \code{data.table} with \code{cpg_id}, \code{target_gene},
 #'   \code{tissue}, \code{direction} and \code{tss_dist}.
 #' @examples
-#' \donttest{
 #' m <- cpgd_measured_eqtms()
-#' m[cpg_id == "cg00000165"]
-#' }
+#' m[m$cpg_id == "cg00000165", ]
 #' @export
 cpgd_measured_eqtms <- function() {
   if (!is.null(.cpgd_env$measured)) return(.cpgd_env$measured)
-  p <- system.file("extdata", "measured_eqtms.csv.gz", package = "cpgdirection")
-  if (!nzchar(p) || !file.exists(p))
-    stop("measured_eqtms.csv.gz is missing from the installed package.", call. = FALSE)
-  M <- data.table::fread(p, showProgress = FALSE)
+  M <- .cpgd_data("measured_eqtms")
   data.table::setkeyv(M, "cpg_id")
   .cpgd_env$measured <- M
   M
@@ -194,17 +189,12 @@ cpgd_measured_eqtms <- function() {
 #'   \code{top_instrument}, and from 2.2.5 \code{p_HEIDI}, \code{nsnp_HEIDI}
 #'   and \code{heidi_status} (\code{"pass"}, \code{"fail"}, \code{"not_tested"}).
 #' @examples
-#' \donttest{
 #' s <- cpgd_smr_directions()
-#' s[cpg_id == "cg18998365"]
-#' }
+#' s[s$cpg_id == "cg18998365", ]
 #' @export
 cpgd_smr_directions <- function() {
   if (!is.null(.cpgd_env$smr)) return(.cpgd_env$smr)
-  p <- system.file("extdata", "smr_directions.csv.gz", package = "cpgdirection")
-  if (!nzchar(p) || !file.exists(p))
-    stop("smr_directions.csv.gz is missing from the installed package.", call. = FALSE)
-  S <- data.table::fread(p, showProgress = FALSE)
+  S <- .cpgd_data("smr_directions")
   data.table::setkeyv(S, c("cpg_id", "target_gene"))
   .cpgd_env$smr <- S
   S

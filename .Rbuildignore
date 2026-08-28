@@ -16,3 +16,5 @@
 ^[^/]*\.html$
 ^cpgdirection_[^/]*\.tar\.gz$
 ^[^/]*\.Rcheck$
+^.*\.BiocCheck$
+^cpgdirection_.*\.tar\.gz$

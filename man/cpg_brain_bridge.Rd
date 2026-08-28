@@ -57,7 +57,5 @@ graded set, and otherwise a genome-wide synthesised saliva-bridge score.
 }
 
 \examples{
-\donttest{
 cpg_brain_bridge("cg06846259", tissue = "saliva")   # POMC, grade A++
-}
 }

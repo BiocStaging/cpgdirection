@@ -25,14 +25,13 @@ CPGD_EVIDENCE <- c(
   "no_evidence")
 stopifnot(!anyDuplicated(CPGD_EVIDENCE))
 
+# Path of the BUNDLED lookup file, or NA when this (thin) installation holds
+# none and the table comes from the cpgdirectionData ExperimentHub package
+# instead. See R/data_backend.R for the resolution order.
 .cpgd_lookup_path <- function(tissue = "blood") {
   p <- system.file("extdata", sprintf("lookup_%s_hg19.csv.gz", tissue),
                    package = "cpgdirection")
-  if (!nzchar(p) || !file.exists(p)) {
-    stop("No lookup table for tissue = \"", tissue, "\" in the installed package. ",
-         "Available: ", paste(CPGD_TISSUES, collapse = ", "), ". Reinstall the package.",
-         call. = FALSE)
-  }
+  if (!nzchar(p) || !file.exists(p)) return(NA_character_)
   p
 }
 
@@ -41,7 +40,7 @@ stopifnot(!anyDuplicated(CPGD_EVIDENCE))
 .cpgd_lookup <- function(tissue = "blood") {
   key <- paste0("lookup_", tissue)
   if (!is.null(.cpgd_env[[key]])) return(.cpgd_env[[key]])
-  L <- data.table::fread(.cpgd_lookup_path(tissue), showProgress = FALSE)
+  L <- .cpgd_data(sprintf("lookup_%s_hg19", tissue))
   req <- c("cpg_id", "target_gene", "tss_dist", "status", "direction",
            "probability_plus1", "confidence", "evidence_tier")
   miss <- setdiff(req, names(L))

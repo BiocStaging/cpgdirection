@@ -22,8 +22,6 @@ have measured associations with more than one gene. A CpG annotated to gene X
 on the array may have its measured relationship with gene Y.
 }
 \examples{
-\donttest{
 m <- cpgd_measured_eqtms()
-m[cpg_id == "cg00000165"]
-}
+m[m$cpg_id == "cg00000165", ]
 }

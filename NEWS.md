@@ -1,3 +1,23 @@
+# cpgdirection 2.6.0
+
+* **Bioconductor-ready data backend.** All data layers now resolve through
+  one internal backend (`R/data_backend.R`) with three tiers, tried in
+  order: `options(cpgdirection.data_dir=)` (an explicit local directory, for
+  air-gapped machines and pinned analyses), the package's own bundled
+  `inst/extdata` (the full GitHub build -- unchanged behaviour, no network
+  ever needed), and the new `cpgdirectionData` ExperimentHub companion
+  package (the thin Bioconductor build). The fat and thin builds run
+  identical code and return identical tables; only the transport differs.
+  `tools/make_thin_build.R` produces the submission tarball (extdata drops
+  from ~100 MB to 4.4 MB; the eight large layers move to the Hub).
+* `cpgd_lookup_info()$file` now reports the actual data source
+  (`"cpgdirectionData (ExperimentHub)"` on a thin install).
+* Reporting polish: printing a column subset of a `cpgd_pairs` table shows a
+  plain table instead of a summary with misleading zeros, and in
+  `gene_mode = "filter"` a CpG whose discovered targets were all removed by
+  the gene filter is no longer miscounted as "no target found" -- discovery
+  is judged before the filter.
+
 # cpgdirection 2.5.0
 
 * **The mapping database is now multi-source, cross-validated, and

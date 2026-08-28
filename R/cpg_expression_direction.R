@@ -208,6 +208,8 @@
 #' be inspected rather than taken on trust.
 #'
 #' @return A \code{data.frame}.
+#' @examples
+#' cpgd_accuracy_table()
 #' @export
 cpgd_accuracy_table <- function() {
   data.frame(
@@ -236,6 +238,8 @@ cpgd_accuracy_table <- function() {
 #'   \code{"nasal_epithelium"} or \code{"solid_tissue"}.
 #' @return A named list: tissue, number of pairs, CpGs and genes, genome build,
 #'   file path and package version.
+#' @examples
+#' cpgd_lookup_info("blood")
 #' @export
 cpgd_lookup_info <- function(tissue = c("blood", "nasal_epithelium", "solid_tissue")) {
   tissue <- match.arg(tissue)
@@ -245,7 +249,10 @@ cpgd_lookup_info <- function(tissue = c("blood", "nasal_epithelium", "solid_tiss
        cpgs = length(unique(L$cpg_id)),
        genes = length(unique(L$target_gene)),
        genome_build = "hg19",
-       file = .cpgd_lookup_path(tissue),
+       file = {
+         p <- .cpgd_lookup_path(tissue)
+         if (is.na(p)) "cpgdirectionData (ExperimentHub)" else p
+       },
        package_version = as.character(utils::packageVersion("cpgdirection")))
 }
 

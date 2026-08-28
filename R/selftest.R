@@ -14,9 +14,7 @@
 #'   deliberate change of behaviour, never to make a failure go away.
 #' @return Invisibly, \code{TRUE} on success. Prints a report either way.
 #' @examples
-#' \donttest{
 #' cpgd_selftest()
-#' }
 #' @export
 cpgd_selftest <- function(regenerate = NULL) {
 

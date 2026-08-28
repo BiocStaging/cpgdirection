@@ -143,8 +143,19 @@ Abstention is likewise pair-specific.
 }
 
 \examples{
+# hermetic demonstration with injected fixture sources (fast, no data):
+fx <- data.frame(cpg_id = "cg10000001", target_gene = "GENEA",
+                 array = "EPICv2", annotation_source = "Illumina_EPICv2",
+                 refgene_group = "TSS200")
+p <- cpg_gene_pairs("cg10000001", universal = FALSE, verbose = FALSE,
+                    sources = list(manifest = fx, lookup = NULL,
+                                   measured = NULL, smr = NULL,
+                                   probe_qc = NULL))
+p[, c("cpg_id", "target_gene", "mapping_primary", "best_evidence"),
+  with = FALSE]
+
 \donttest{
-# bare CpGs: targets are discovered automatically
+# real resources: bare CpGs, targets discovered automatically
 p <- cpg_gene_pairs(c("cg26261055", "cg06495038", "cg26196496"))
 
 # DMSA-style use: discovered targets restricted to a gene set

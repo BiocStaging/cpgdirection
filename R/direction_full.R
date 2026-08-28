@@ -174,16 +174,16 @@
 #' answer.
 #'
 #' @examples
-#' \donttest{
-#' res <- cpg_expression_direction(c("cg02079741_TC21_POMC", "cg00000029"))
+#' res <- cpg_expression_direction(c("cg02079741_TC21_POMC", "cg00000029"),
+#'                                 universal = FALSE, verbose = FALSE)
 #' res[, c("cpg_id", "best_direction", "best_evidence",
 #'         "best_expected_accuracy"), with = FALSE]
 #'
 #' # a single tissue returns the per-tissue column set instead
-#' one <- cpg_expression_direction("cg00000029", tissue = "blood")
+#' one <- cpg_expression_direction("cg00000029", tissue = "blood",
+#'                                 verbose = FALSE)
 #' one[, c("cpg_id", "target_gene", "direction", "evidence_tier", "call"),
 #'     with = FALSE]
-#' }
 #' @export
 cpg_expression_direction <- function(cpgs,
                                      genes = NULL,

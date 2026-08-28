@@ -37,7 +37,5 @@ not evidence about its CpGs, so those calls are not tested here.
 }
 
 \examples{
-\donttest{
 cpgd_direction_balance()
-}
 }

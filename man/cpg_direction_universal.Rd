@@ -62,10 +62,9 @@ affecting expression at all. Use it to orient a hypothesis, not to settle one.
 }
 
 \examples{
-\dontrun{
-cpgd_build_gene_tss("gene_tss_hg19.csv")
+\donttest{
+# builds (and caches) the TxDb-derived TSS table on first use
 cpg_direction_universal(c("cg03405789", "cg08215831"),
-                        genes = c("CRH", "CRH"),
-                        gene_tss = "gene_tss_hg19.csv")
+                        genes = c("CRH", "CRH"))
 }
 }

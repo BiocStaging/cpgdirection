@@ -81,8 +81,6 @@ the above in view.
 }
 
 \examples{
-\donttest{
 s <- cpgd_smr_directions()
-s[cpg_id == "cg18998365"]
-}
+s[s$cpg_id == "cg18998365", ]
 }

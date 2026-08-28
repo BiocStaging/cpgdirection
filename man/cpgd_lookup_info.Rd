@@ -17,3 +17,6 @@ A named list: tissue, number of pairs, CpGs and genes, genome build,
 \description{
 Information about the bundled lookup table
 }
+\examples{
+cpgd_lookup_info("blood")
+}

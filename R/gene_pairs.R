@@ -131,8 +131,19 @@
 #' Abstention is likewise pair-specific.
 #'
 #' @examples
+#' # hermetic demonstration with injected fixture sources (fast, no data):
+#' fx <- data.frame(cpg_id = "cg10000001", target_gene = "GENEA",
+#'                  array = "EPICv2", annotation_source = "Illumina_EPICv2",
+#'                  refgene_group = "TSS200")
+#' p <- cpg_gene_pairs("cg10000001", universal = FALSE, verbose = FALSE,
+#'                     sources = list(manifest = fx, lookup = NULL,
+#'                                    measured = NULL, smr = NULL,
+#'                                    probe_qc = NULL))
+#' p[, c("cpg_id", "target_gene", "mapping_primary", "best_evidence"),
+#'   with = FALSE]
+#'
 #' \donttest{
-#' # bare CpGs: targets are discovered automatically
+#' # real resources: bare CpGs, targets discovered automatically
 #' p <- cpg_gene_pairs(c("cg26261055", "cg06495038", "cg26196496"))
 #'
 #' # DMSA-style use: discovered targets restricted to a gene set
@@ -341,6 +352,11 @@ cpg_gene_pairs <- function(cpgs,
     get("has_lookup"), "catalogue_model",
     default = "annotation")]
 
+  # Discovery is judged BEFORE any gene restriction: a CpG whose targets are
+  # later removed by `genes=` was discovered, not unmapped, and must not be
+  # reported as having no target.
+  discovered_cpgs <- unique(pairs$cpg_id)
+
   # ---- annotation_mode = "strict": an input that names a gene is restricted
   # to its annotated gene(s); bare inputs still auto-discover ---------------
   if (annotation_mode == "strict" && !is.null(ig) && nrow(ig)) {
@@ -434,7 +450,7 @@ cpg_gene_pairs <- function(cpgs,
   }
 
   # ---- CpGs with no discovered target: visible, never silent --------------
-  unmapped <- setdiff(u, unique(out$cpg_id))
+  unmapped <- setdiff(u, discovered_cpgs)
   if (length(unmapped)) {
     warning(length(unmapped), " CpG(s) had no target gene from the EPIC-v2 ",
             "manifest, packaged catalogue, measured eQTM, SMR, or other ",
@@ -533,6 +549,11 @@ cpg_gene_pairs <- function(cpgs,
 
 #' @export
 print.cpgd_pairs <- function(x, ...) {
+  # A column subset or copy loses the discovery attributes; the summary would
+  # then print misleading zeros. Show those as plain tables instead.
+  if (is.null(attr(x, "n_submitted"))) {
+    return(print(data.table::as.data.table(unclass(x)), ...))
+  }
   n_sub <- attr(x, "n_submitted")
   n_cpg <- attr(x, "n_unique_cpgs")
   sc <- attr(x, "source_counts")

@@ -18,3 +18,7 @@ arrays, in at least two peripheral tissues, outside the extended MHC), with
 per-cohort support flags and grades. Grade A++ (n = 205; 184 saliva-usable)
 is supported by four independent cohorts.
 }
+\examples{
+d <- cpgd_bridge_deliverable()
+head(d)
+}

@@ -67,8 +67,6 @@ the hg19 positions from \code{\link{cpgd_cpg_positions}}, not these.
 }
 
 \examples{
-\donttest{
 m <- cpgd_manifest_genes()
-m[cpg_id == "cg26261055"]   # CRHBP, 4 independent sources, TSS -899 bp
-}
+m[m$cpg_id == "cg26261055", ]   # CRHBP, 4 independent sources, TSS -899 bp
 }

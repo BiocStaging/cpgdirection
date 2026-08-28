@@ -7,8 +7,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
 ## The problem
@@ -23,17 +23,19 @@ This package assigns the sign, and tells you how much to trust it.
 
 ## One call
 
-```{r}
+```{r one-call}
 library(cpgdirection)
-cpgd_selftest()          # run once after installing
-
-res <- cpg_expression_direction(my_cpgs)
+my_cpgs <- c("Zcg00335286_TC21_MC2R", "cg02079741_TC21_POMC", "cg00000029")
+res <- cpg_expression_direction(my_cpgs, universal = FALSE, verbose = FALSE)
+res[, c("cpg_id", "best_direction", "best_evidence"), with = FALSE]
 ```
 
 `my_cpgs` can be a character vector, a file path or a data frame column.
 Identifiers carrying array suffixes or analysis prefixes are reduced to their
 canonical form automatically, so `Zcg00335286_TC21_MC2R` is understood, and the
-gene embedded in the name is used as the target.
+gene embedded in the name is used as the target. (`universal = FALSE` skips the
+distance-only fallback layer here, which needs the Bioconductor gene
+annotation packages on first use.)
 
 ## The two columns that matter
 
@@ -56,13 +58,30 @@ are both a `+1`. `best_expected_accuracy` carries the validated figure.
 | `distance_only` | 0.60–0.65 | distance to the TSS, nothing else |
 | `no_evidence` | — | nothing available; a correct answer, not a failure |
 
+## Every target gene, one row per pair
+
+A CpG is not obliged to regulate one gene. `cpg_gene_pairs()` discovers every
+supported target automatically -- bare identifiers suffice -- and resolves
+direction separately for every CpG x gene pair, excluding probes flagged as
+unreliable (cross-hybridizing or degenerately mapped) by default:
+
+```{r gene-pairs}
+p <- cpg_gene_pairs(c("cg26261055", "cg06495038"), verbose = FALSE)
+p[, c("cpg_id", "target_gene", "mapping_primary", "best_direction",
+      "best_evidence", "usable"), with = FALSE]
+```
+
+`mapping_sources` records how each gene entered the candidate set (manifest
+annotation, catalogue, measured eQTM, SMR); `best_evidence` records what the
+direction rests on. They are different facts and are kept apart.
+
 ## Abstention is deliberate
 
 Where the evidence is insufficient the package declines rather than guessing.
 That is why accuracy is high on the sites it does call. If you need a complete
 column, name the tissue your question is about:
 
-```{r}
+```{r target-tissue, eval = FALSE}
 res <- cpg_expression_direction(my_cpgs, target_tissue = "solid_tissue")
 ```
 
@@ -72,7 +91,7 @@ outcome.
 
 ## Checking a result that looks one-sided
 
-```{r}
+```{r direction-balance}
 cpgd_direction_balance(res)
 ```
 
@@ -85,3 +104,9 @@ Every accuracy figure is **conditional on the CpG being an eQTM at all**. The
 catalogues behind the models contain only significant associations, so nothing
 here tells you whether a CpG affects expression. Feed it a site with no real
 effect and you will get a confident direction for something that is not there.
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```

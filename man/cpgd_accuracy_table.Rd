@@ -13,3 +13,6 @@ A \code{data.frame}.
 The validation figures behind the \code{expected_accuracy} column, so they can
 be inspected rather than taken on trust.
 }
+\examples{
+cpgd_accuracy_table()
+}

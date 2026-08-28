@@ -359,8 +359,8 @@ test_that("input rows are traceable from pairs", {
 
 test_that("bare EPIC v2 CpGs discover manifest genes from the packaged table", {
   skip_on_cran()
-  skip_if_not(nzchar(system.file("extdata", "epicv2_probe_gene_annotation.csv.gz",
-                                 package = "cpgdirection")))
+  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_gene_annotation"),
+              "annotation layer unavailable")
   m <- cpgd_manifest_genes()
   expect_true(all(c("cpg_id", "target_gene", "array", "annotation_source",
                     "refgene_group") %in% names(m)))
@@ -374,8 +374,8 @@ test_that("bare EPIC v2 CpGs discover manifest genes from the packaged table", {
 
 test_that("pair results are invariant on real resources too", {
   skip_on_cran()
-  skip_if_not(nzchar(system.file("extdata", "epicv2_probe_gene_annotation.csv.gz",
-                                 package = "cpgdirection")))
+  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_gene_annotation"),
+              "annotation layer unavailable")
   a <- suppressWarnings(cpg_gene_pairs("cg26261055", universal = FALSE,
                                        verbose = FALSE))
   b <- suppressWarnings(cpg_gene_pairs("cg26261055_CRHBP", universal = FALSE,
@@ -498,8 +498,8 @@ test_that("an unverified hg19 position is visible on the pair row", {
 
 test_that("the packaged annotation carries multi-source agreement", {
   skip_on_cran()
-  skip_if_not(nzchar(system.file("extdata", "epicv2_probe_gene_annotation.csv.gz",
-                                 package = "cpgdirection")))
+  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_gene_annotation"),
+              "annotation layer unavailable")
   m <- cpgd_manifest_genes()
   skip_if_not("n_annotation_sources" %in% names(m))
   expect_true(all(c("annotation_source", "n_annotation_sources") %in% names(m)))
@@ -510,8 +510,8 @@ test_that("the packaged annotation carries multi-source agreement", {
 
 test_that("the packaged probe QC table loads and flags a known fraction", {
   skip_on_cran()
-  skip_if_not(nzchar(system.file("extdata", "epicv2_probe_qc.csv.gz",
-                                 package = "cpgdirection")))
+  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_qc"),
+              "probe QC layer unavailable")
   qc <- cpgd_probe_qc()
   expect_true(all(c("masked_general", "masked_partial",
                     "pos_hg19_verified") %in% names(qc)))

@@ -23,13 +23,13 @@
 #'   \code{direction}, \code{tier}, \code{score}, \code{n_instruments},
 #'   \code{instrument_agreement}, \code{cpg_gene_dist}, \code{hla},
 #'   \code{inv17q21}, \code{p_SMR}, \code{p_HEIDI}, \code{heidi_status}.
+#' @examples
+#' b <- cpgd_brain_directions()
+#' head(b)
 #' @export
 cpgd_brain_directions <- function() {
   if (!is.null(.cpgd_env$brain)) return(.cpgd_env$brain)
-  p <- system.file("extdata", "brain_directions.csv.gz", package = "cpgdirection")
-  if (!nzchar(p)) stop("brain_directions.csv.gz missing from the installation.",
-                       call. = FALSE)
-  B <- data.table::fread(p, showProgress = FALSE)
+  B <- .cpgd_data("brain_directions")
   data.table::setkeyv(B, "cpg_id")
   .cpgd_env$brain <- B
   B
@@ -45,11 +45,13 @@ cpgd_brain_directions <- function() {
 #' @return A \code{data.table}, one row per CpG; see the paper for column
 #'   definitions. \code{strict_qc == FALSE} rows sit on probes failing the
 #'   stringent probe filter and should be treated as provisional.
+#' @examples
+#' d <- cpgd_bridge_deliverable()
+#' head(d)
 #' @export
 cpgd_bridge_deliverable <- function() {
   if (!is.null(.cpgd_env$bridge)) return(.cpgd_env$bridge)
-  p <- system.file("extdata", "bridge_deliverable.csv", package = "cpgdirection")
-  D <- data.table::fread(p, showProgress = FALSE)
+  D <- .cpgd_data("bridge_deliverable")
   data.table::setkeyv(D, "cpg_id")
   .cpgd_env$bridge <- D
   D
@@ -98,9 +100,7 @@ cpgd_bridge_deliverable <- function() {
 #'   co-regulation by physical contact, with no direction attached - the
 #'   evidence class that corroborated causal targets 2.5x over nearest genes.
 #' @examples
-#' \donttest{
 #' cpg_brain_bridge("cg06846259", tissue = "saliva")   # POMC, grade A++
-#' }
 #' @export
 cpg_brain_bridge <- function(cpgs, tissue = c("saliva", "blood", "buccal")) {
   tissue <- match.arg(tissue)
@@ -154,10 +154,9 @@ cpg_brain_bridge <- function(cpgs, tissue = c("saliva", "blood", "buccal")) {
 
   ## genome-wide synthesised score (saliva-bridge; reported for every tissue,
   ## labelled for what it is)
-  p <- system.file("extdata", "saliva_bridge_scores.csv.gz", package = "cpgdirection")
-  if (nzchar(p)) {
-    S <- data.table::fread(p, select = c("cpg_id", "ensemble_pctile"),
-                           showProgress = FALSE)
+  S <- .cpgd_data("saliva_bridge_scores", required = FALSE)
+  if (!is.null(S)) {
+    S <- S[, c("cpg_id", "ensemble_pctile"), with = FALSE]
     out <- merge(out, S, by = "cpg_id", all.x = TRUE)
   }
 
@@ -180,9 +179,8 @@ cpg_brain_bridge <- function(cpgs, tissue = c("saliva", "blood", "buccal")) {
   ##     same enhancer the CpG sits in. Candidate co-regulation only - contact
   ##     is not direction - but this evidence class corroborated the causal
   ##     target 2.5x over the nearest gene, so it earns a labelled column.
-  ph <- system.file("extdata", "hic_cotargets.csv.gz", package = "cpgdirection")
-  if (nzchar(ph)) {
-    HC <- data.table::fread(ph, showProgress = FALSE)
+  HC <- .cpgd_data("hic_cotargets", required = FALSE)
+  if (!is.null(HC)) {
     out <- merge(out, HC, by = "cpg_id", all.x = TRUE)
   }
 

@@ -16,5 +16,6 @@ agreement against the HELIX catalogue. Used by
 useful.
 }
 \examples{
-\donttest{p <- cpgd_cpg_positions(); p[cpg_id == "cg00000029"]}
+p <- cpgd_cpg_positions()
+p[p$cpg_id == "cg00000029", ]
 }

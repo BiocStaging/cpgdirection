@@ -46,3 +46,14 @@ The builder:
   \item writes the compressed table.
 }
 }
+\examples{
+f <- tempfile(fileext = ".csv")
+writeLines(c("[Heading]", "Descriptor File Name,EPIC-8v2-0_TEST",
+  "[Assay]",
+  "IlmnID,Name,CHR,MAPINFO,Strand_FR,UCSC_RefGene_Name,UCSC_RefGene_Group",
+  "cg10000001_TC21,cg10000001,chr1,1000,F,GENEA;GENEB,TSS200;TSS1500",
+  "[Controls]", "ctl1,negative,0,0"), f)
+out <- tempfile(fileext = ".csv.gz")
+cpgd_build_manifest_genes(f, out = out)
+read.csv(out)
+}

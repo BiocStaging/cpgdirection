@@ -25,9 +25,9 @@
 #' than a TSS, so distances derived from it are cruder.
 #'
 #' @examples
-#' \dontrun{
-#' # BiocManager::install(c("TxDb.Hsapiens.UCSC.hg19.knownGene", "org.Hs.eg.db"))
-#' cpgd_build_gene_tss()
+#' \donttest{
+#' # needs TxDb.Hsapiens.UCSC.hg19.knownGene and org.Hs.eg.db
+#' cpgd_build_gene_tss(out = tempfile(fileext = ".csv"))
 #' }
 #' @export
 cpgd_build_gene_tss <- function(out = "gene_tss_hg19.csv",
@@ -124,11 +124,10 @@ cpgd_build_gene_tss <- function(out = "gene_tss_hg19.csv",
 #' affecting expression at all. Use it to orient a hypothesis, not to settle one.
 #'
 #' @examples
-#' \dontrun{
-#' cpgd_build_gene_tss("gene_tss_hg19.csv")
+#' \donttest{
+#' # builds (and caches) the TxDb-derived TSS table on first use
 #' cpg_direction_universal(c("cg03405789", "cg08215831"),
-#'                         genes = c("CRH", "CRH"),
-#'                         gene_tss = "gene_tss_hg19.csv")
+#'                         genes = c("CRH", "CRH"))
 #' }
 #' @export
 cpg_direction_universal <- function(cpgs, genes, gene_tss = NULL,
@@ -245,14 +244,13 @@ cpg_direction_universal <- function(cpgs, genes, gene_tss = NULL,
 #' useful.
 #'
 #' @return A \code{data.table} with \code{cpg_id}, \code{chr}, \code{pos}.
-#' @examples \donttest{p <- cpgd_cpg_positions(); p[cpg_id == "cg00000029"]}
+#' @examples
+#' p <- cpgd_cpg_positions()
+#' p[p$cpg_id == "cg00000029", ]
 #' @export
 cpgd_cpg_positions <- function() {
   if (!is.null(.cpgd_env$positions)) return(.cpgd_env$positions)
-  f <- system.file("extdata", "cpg_positions_hg19.csv.gz", package = "cpgdirection")
-  if (!nzchar(f) || !file.exists(f))
-    stop("cpg_positions_hg19.csv.gz is missing from the installed package.", call. = FALSE)
-  P <- data.table::fread(f, showProgress = FALSE)
+  P <- .cpgd_data("cpg_positions_hg19")
   data.table::setkeyv(P, "cpg_id")
   .cpgd_env$positions <- P
   P

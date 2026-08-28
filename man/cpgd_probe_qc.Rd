@@ -42,8 +42,6 @@ Informational flags use the ANY-replicate rule: \code{ch_blat_predicted}
 (alignment mismatches) mark rows without excluding them.
 }
 \examples{
-\donttest{
 qc <- cpgd_probe_qc()
-qc[qc$masked_general == TRUE][1:3]
-}
+head(qc[qc$masked_general == TRUE, ], 3)
 }

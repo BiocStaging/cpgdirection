@@ -29,3 +29,7 @@ derived blood and brain directions is only ~65\%, so do NOT substitute a
 peripheral eQTM direction for these.
 }
 
+\examples{
+b <- cpgd_brain_directions()
+head(b)
+}

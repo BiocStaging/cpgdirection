@@ -9,7 +9,19 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+# The demonstration chunks need the package's data layers. They are present
+# in the GitHub (fat) build, in local-data mode, and once the cpgdirectionData
+# resources are available from ExperimentHub; on a machine without them the
+# code is shown but not evaluated.
+has_data <- cpgdirection:::.cpgd_has_data("lookup_blood_hg19") &&
+  cpgdirection:::.cpgd_has_data("smr_directions") &&
+  cpgdirection:::.cpgd_has_data("epicv2_probe_gene_annotation")
+knitr::opts_chunk$set(eval = has_data)
 ```
+
+*The code below is evaluated only when the package's data layers are
+available -- bundled, via `options(cpgdirection.data_dir = )`, or through
+the cpgdirectionData package. The text and code are complete either way.*
 
 ## The problem
 
@@ -107,6 +119,6 @@ effect and you will get a confident direction for something that is not there.
 
 ## Session info
 
-```{r session-info}
+```{r session-info, eval = TRUE}
 sessionInfo()
 ```

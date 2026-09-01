@@ -16,6 +16,8 @@ agreement against the HELIX catalogue. Used by
 useful.
 }
 \examples{
+\dontshow{if (cpgd_has_data("cpg_positions_hg19")) withAutoprint(\{ # examplesIf}
 p <- cpgd_cpg_positions()
 p[p$cpg_id == "cg00000029", ]
+\dontshow{\}) # examplesIf}
 }

@@ -29,7 +29,7 @@ test_that("rds files are accepted in the override directory", {
 test_that("a missing resource reports every retrieval route", {
   expect_error(cpgdirection:::.cpgd_data("no_such_layer"),
                "cpgdirection.data_dir")
-  expect_false(cpgdirection:::.cpgd_has_data("no_such_layer"))
+  expect_false(cpgd_has_data("no_such_layer"))
 })
 
 test_that("required = FALSE degrades to NULL instead of stopping", {

@@ -30,6 +30,8 @@ peripheral eQTM direction for these.
 }
 
 \examples{
+\dontshow{if (cpgd_has_data("brain_directions")) withAutoprint(\{ # examplesIf}
 b <- cpgd_brain_directions()
 head(b)
+\dontshow{\}) # examplesIf}
 }

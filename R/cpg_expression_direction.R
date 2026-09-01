@@ -238,7 +238,7 @@ cpgd_accuracy_table <- function() {
 #'   \code{"nasal_epithelium"} or \code{"solid_tissue"}.
 #' @return A named list: tissue, number of pairs, CpGs and genes, genome build,
 #'   file path and package version.
-#' @examples
+#' @examplesIf cpgd_has_data("lookup_blood_hg19")
 #' cpgd_lookup_info("blood")
 #' @export
 cpgd_lookup_info <- function(tissue = c("blood", "nasal_epithelium", "solid_tissue")) {

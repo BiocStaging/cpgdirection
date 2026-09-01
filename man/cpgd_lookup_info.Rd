@@ -18,5 +18,7 @@ A named list: tissue, number of pairs, CpGs and genes, genome build,
 Information about the bundled lookup table
 }
 \examples{
+\dontshow{if (cpgd_has_data("lookup_blood_hg19")) withAutoprint(\{ # examplesIf}
 cpgd_lookup_info("blood")
+\dontshow{\}) # examplesIf}
 }

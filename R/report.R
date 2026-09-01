@@ -16,7 +16,7 @@
 #' @param open Open the file in a browser when done. Default \code{FALSE}.
 #'
 #' @return Invisibly, the path written.
-#' @examplesIf requireNamespace("gt", quietly = TRUE)
+#' @examplesIf requireNamespace("gt", quietly = TRUE) && cpgd_has_data("lookup_blood_hg19")
 #' res <- cpg_expression_direction(c("cg02079741_TC21_POMC", "cg00000029"),
 #'                                 universal = FALSE, verbose = FALSE)
 #' cpgd_report(res, "hpa_panel.html", dir = tempdir())
@@ -215,7 +215,7 @@ cpgd_report <- function(x,
 #' matter how many CpGs it contains. That is a property of the panel's geometry,
 #' not evidence about its CpGs, so those calls are not tested here.
 #'
-#' @examples
+#' @examplesIf cpgd_has_data("lookup_blood_hg19")
 #' cpgd_direction_balance()
 #' @export
 cpgd_direction_balance <- function(x = NULL, tissue = "blood") {

@@ -63,7 +63,7 @@
 #'   \code{exeter_feature}, \code{in_genehancer}, \code{zhou_dist_tss},
 #'   \code{zhou_tx_types}, \code{manifest_probe_id}, \code{chr},
 #'   \code{position} and \code{strand}.
-#' @examples
+#' @examplesIf cpgd_has_data("epicv2_probe_gene_annotation")
 #' m <- cpgd_manifest_genes()
 #' m[m$cpg_id == "cg26261055", ]   # CRHBP, 4 independent sources, TSS -899 bp
 #' @export

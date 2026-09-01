@@ -214,6 +214,7 @@ answer.
 }
 
 \examples{
+\dontshow{if (cpgd_has_data("lookup_blood_hg19")) withAutoprint(\{ # examplesIf}
 res <- cpg_expression_direction(c("cg02079741_TC21_POMC", "cg00000029"),
                                 universal = FALSE, verbose = FALSE)
 res[, c("cpg_id", "best_direction", "best_evidence",
@@ -224,4 +225,5 @@ one <- cpg_expression_direction("cg00000029", tissue = "blood",
                                 verbose = FALSE)
 one[, c("cpg_id", "target_gene", "direction", "evidence_tier", "call"),
     with = FALSE]
+\dontshow{\}) # examplesIf}
 }

@@ -173,7 +173,7 @@
 #' output can tell you whether an effect exists. \code{no_evidence} is a correct
 #' answer.
 #'
-#' @examples
+#' @examplesIf cpgd_has_data("lookup_blood_hg19")
 #' res <- cpg_expression_direction(c("cg02079741_TC21_POMC", "cg00000029"),
 #'                                 universal = FALSE, verbose = FALSE)
 #' res[, c("cpg_id", "best_direction", "best_evidence",

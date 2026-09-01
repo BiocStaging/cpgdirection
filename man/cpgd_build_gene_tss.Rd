@@ -41,8 +41,8 @@ fields are convenient but give a gene \emph{region} label per probe rather
 than a TSS, so distances derived from it are cruder.
 }
 \examples{
-\donttest{
-# needs TxDb.Hsapiens.UCSC.hg19.knownGene and org.Hs.eg.db
+if (requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE) &&
+    requireNamespace("org.Hs.eg.db", quietly = TRUE)) {
 cpgd_build_gene_tss(out = tempfile(fileext = ".csv"))
 }
 }

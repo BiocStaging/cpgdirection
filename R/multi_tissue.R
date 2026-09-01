@@ -39,7 +39,7 @@
 #' 20.3\% of CpGs with measured evidence are associated with more than one gene.
 #' Read the gene columns, not just the direction.
 #'
-#' @examples
+#' @examplesIf cpgd_has_data("lookup_blood_hg19")
 #' res <- cpg_direction_all_tissues(c("cg00050692", "cg00000029"),
 #'                                  verbose = FALSE)
 #' res[, c("cpg_id", "best_direction", "best_evidence"), with = FALSE]
@@ -188,7 +188,7 @@ cpgd_measured_eqtms <- function() {
 #'   \code{instrument_agreement}, \code{cpg_gene_dist},
 #'   \code{top_instrument}, and from 2.2.5 \code{p_HEIDI}, \code{nsnp_HEIDI}
 #'   and \code{heidi_status} (\code{"pass"}, \code{"fail"}, \code{"not_tested"}).
-#' @examples
+#' @examplesIf cpgd_has_data("smr_directions")
 #' s <- cpgd_smr_directions()
 #' s[s$cpg_id == "cg18998365", ]
 #' @export

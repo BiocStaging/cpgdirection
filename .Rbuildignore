@@ -18,3 +18,5 @@
 ^[^/]*\.Rcheck$
 ^.*\.BiocCheck$
 ^cpgdirection_.*\.tar\.gz$
+^\.zenodo\.json$
+^CITATION\.cff$

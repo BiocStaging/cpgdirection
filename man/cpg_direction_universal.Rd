@@ -62,8 +62,8 @@ affecting expression at all. Use it to orient a hypothesis, not to settle one.
 }
 
 \examples{
-\donttest{
-# builds (and caches) the TxDb-derived TSS table on first use
+if (cpgd_has_data("cpg_positions_hg19") &&
+    requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE)) {
 cpg_direction_universal(c("cg03405789", "cg08215831"),
                         genes = c("CRH", "CRH"))
 }

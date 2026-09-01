@@ -5,6 +5,7 @@
 # that reason: they predated the multi-layer default and were never updated.
 
 test_that("identifiers are stripped to canonical form", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   r <- cpg_expression_direction(c("cg00000029_TC21", "cg00000029"),
                                 tissue = "blood", verbose = FALSE)
   expect_true(all(grepl("^cg[0-9]+$", r$cpg_id)))
@@ -12,6 +13,7 @@ test_that("identifiers are stripped to canonical form", {
 })
 
 test_that("a gene parsed from the name is used", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   r <- cpg_expression_direction("cg00050692_TC21_DNMT3A",
                                 tissue = "blood", verbose = FALSE)
   expect_true(r$gene_source[1] %in%
@@ -19,6 +21,7 @@ test_that("a gene parsed from the name is used", {
 })
 
 test_that("unknown identifiers come back as UNMAPPED, not silently dropped", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   r <- cpg_expression_direction("cg99999999", tissue = "blood", verbose = FALSE)
   expect_equal(r$status[1], "UNMAPPED")
 })
@@ -28,6 +31,7 @@ test_that("an unsupported tissue is refused rather than silently substituted", {
 })
 
 test_that("all three tissues load and can score", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   skip_on_cran()
   for (t in c("blood", "nasal_epithelium", "solid_tissue")) {
     r <- cpg_expression_direction("cg00050692", tissue = t, verbose = FALSE)
@@ -37,6 +41,7 @@ test_that("all three tissues load and can score", {
 })
 
 test_that("a requested gene the table cannot supply does not get another gene's direction", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   r <- cpg_expression_direction("Zcg02079741_TC21_POMC",
                                 tissue = "blood", verbose = FALSE)
   expect_equal(nrow(r), 1L)
@@ -54,6 +59,7 @@ test_that("a Z-prefixed identifier still parses", {
 })
 
 test_that("the default mode returns the multi-layer column set", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   skip_on_cran()
   r <- cpg_expression_direction("cg00000029", verbose = FALSE)
   for (col in c("best_direction", "best_evidence", "best_expected_accuracy",
@@ -63,6 +69,7 @@ test_that("the default mode returns the multi-layer column set", {
 })
 
 test_that("target_tissue only fills blanks and never overwrites a call", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   skip_on_cran()
   cg <- c("cg00000029", "cg00050692", "cg02079741")
   a <- cpg_expression_direction(cg, verbose = FALSE)
@@ -75,6 +82,7 @@ test_that("target_tissue only fills blanks and never overwrites a call", {
 })
 
 test_that("the shipped reference reproduces", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   skip_on_cran()
   expect_true(cpgd_selftest())
 })

@@ -359,7 +359,7 @@ test_that("input rows are traceable from pairs", {
 
 test_that("bare EPIC v2 CpGs discover manifest genes from the packaged table", {
   skip_on_cran()
-  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_gene_annotation"),
+  skip_if_not(cpgd_has_data("epicv2_probe_gene_annotation"),
               "annotation layer unavailable")
   m <- cpgd_manifest_genes()
   expect_true(all(c("cpg_id", "target_gene", "array", "annotation_source",
@@ -374,7 +374,7 @@ test_that("bare EPIC v2 CpGs discover manifest genes from the packaged table", {
 
 test_that("pair results are invariant on real resources too", {
   skip_on_cran()
-  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_gene_annotation"),
+  skip_if_not(cpgd_has_data("epicv2_probe_gene_annotation"),
               "annotation layer unavailable")
   a <- suppressWarnings(cpg_gene_pairs("cg26261055", universal = FALSE,
                                        verbose = FALSE))
@@ -388,6 +388,7 @@ test_that("pair results are invariant on real resources too", {
 })
 
 test_that("cpg_expression_direction() is unchanged by the pair machinery", {
+  skip_if_not(cpgd_has_data("lookup_blood_hg19"), "blood catalogue unavailable")
   skip_on_cran()
   r <- cpg_expression_direction("cg00000029", tissue = "blood", verbose = FALSE)
   expect_equal(nrow(r), 1L)
@@ -498,7 +499,7 @@ test_that("an unverified hg19 position is visible on the pair row", {
 
 test_that("the packaged annotation carries multi-source agreement", {
   skip_on_cran()
-  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_gene_annotation"),
+  skip_if_not(cpgd_has_data("epicv2_probe_gene_annotation"),
               "annotation layer unavailable")
   m <- cpgd_manifest_genes()
   skip_if_not("n_annotation_sources" %in% names(m))
@@ -510,7 +511,7 @@ test_that("the packaged annotation carries multi-source agreement", {
 
 test_that("the packaged probe QC table loads and flags a known fraction", {
   skip_on_cran()
-  skip_if_not(cpgdirection:::.cpgd_has_data("epicv2_probe_qc"),
+  skip_if_not(cpgd_has_data("epicv2_probe_qc"),
               "probe QC layer unavailable")
   qc <- cpgd_probe_qc()
   expect_true(all(c("masked_general", "masked_partial",

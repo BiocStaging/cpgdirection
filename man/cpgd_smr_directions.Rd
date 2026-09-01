@@ -81,6 +81,8 @@ the above in view.
 }
 
 \examples{
+\dontshow{if (cpgd_has_data("smr_directions")) withAutoprint(\{ # examplesIf}
 s <- cpgd_smr_directions()
 s[s$cpg_id == "cg18998365", ]
+\dontshow{\}) # examplesIf}
 }

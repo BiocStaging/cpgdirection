@@ -79,3 +79,27 @@
 .cpgd_has_data <- function(base) {
   !is.null(tryCatch(.cpgd_data(base, required = FALSE), error = function(e) NULL))
 }
+
+
+#' Is a data layer available in this session?
+#'
+#' Reports whether a named data layer can be retrieved right now -- from the
+#' directory named by \code{options(cpgdirection.data_dir = )}, from the copy
+#' bundled with the package, or from the \pkg{cpgdirectionData}
+#' ExperimentHub package. Examples, vignettes and analysis scripts use it to
+#' skip work that has no data behind it instead of failing.
+#'
+#' @param name Layer name, for example \code{"lookup_blood_hg19"},
+#'   \code{"smr_directions"} or \code{"epicv2_probe_gene_annotation"}. The
+#'   default \code{NULL} tests the blood catalogue lookup, the layer most
+#'   functions reach for first.
+#' @return A single \code{TRUE} or \code{FALSE}.
+#' @examples
+#' cpgd_has_data()
+#' cpgd_has_data("smr_directions")
+#' @export
+cpgd_has_data <- function(name = NULL) {
+  if (is.null(name)) name <- "lookup_blood_hg19"
+  stopifnot(is.character(name), length(name) == 1L)
+  isTRUE(.cpgd_has_data(name))
+}

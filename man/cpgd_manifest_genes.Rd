@@ -67,6 +67,8 @@ the hg19 positions from \code{\link{cpgd_cpg_positions}}, not these.
 }
 
 \examples{
+\dontshow{if (cpgd_has_data("epicv2_probe_gene_annotation")) withAutoprint(\{ # examplesIf}
 m <- cpgd_manifest_genes()
 m[m$cpg_id == "cg26261055", ]   # CRHBP, 4 independent sources, TSS -899 bp
+\dontshow{\}) # examplesIf}
 }

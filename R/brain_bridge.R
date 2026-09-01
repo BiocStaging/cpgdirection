@@ -23,7 +23,7 @@
 #'   \code{direction}, \code{tier}, \code{score}, \code{n_instruments},
 #'   \code{instrument_agreement}, \code{cpg_gene_dist}, \code{hla},
 #'   \code{inv17q21}, \code{p_SMR}, \code{p_HEIDI}, \code{heidi_status}.
-#' @examples
+#' @examplesIf cpgd_has_data("brain_directions")
 #' b <- cpgd_brain_directions()
 #' head(b)
 #' @export
@@ -99,7 +99,7 @@ cpgd_bridge_deliverable <- function() {
 #'   adult-cortex enhancer the CpG sits in (PsychENCODE): candidate
 #'   co-regulation by physical contact, with no direction attached - the
 #'   evidence class that corroborated causal targets 2.5x over nearest genes.
-#' @examples
+#' @examplesIf cpgd_has_data("saliva_bridge_scores")
 #' cpg_brain_bridge("cg06846259", tissue = "saliva")   # POMC, grade A++
 #' @export
 cpg_brain_bridge <- function(cpgs, tissue = c("saliva", "blood", "buccal")) {

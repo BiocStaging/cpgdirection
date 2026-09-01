@@ -37,5 +37,7 @@ not evidence about its CpGs, so those calls are not tested here.
 }
 
 \examples{
+\dontshow{if (cpgd_has_data("lookup_blood_hg19")) withAutoprint(\{ # examplesIf}
 cpgd_direction_balance()
+\dontshow{\}) # examplesIf}
 }

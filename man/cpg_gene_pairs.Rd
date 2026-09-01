@@ -154,7 +154,7 @@ p <- cpg_gene_pairs("cg10000001", universal = FALSE, verbose = FALSE,
 p[, c("cpg_id", "target_gene", "mapping_primary", "best_evidence"),
   with = FALSE]
 
-\donttest{
+if (cpgd_has_data("lookup_blood_hg19")) {
 # real resources: bare CpGs, targets discovered automatically
 p <- cpg_gene_pairs(c("cg26261055", "cg06495038", "cg26196496"))
 

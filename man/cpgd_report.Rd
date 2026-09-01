@@ -41,7 +41,7 @@ a plain styled table when it is not, so a long run never fails at the last
 step for want of an optional package.
 }
 \examples{
-\dontshow{if (requireNamespace("gt", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("gt", quietly = TRUE) && cpgd_has_data("lookup_blood_hg19")) withAutoprint(\{ # examplesIf}
 res <- cpg_expression_direction(c("cg02079741_TC21_POMC", "cg00000029"),
                                 universal = FALSE, verbose = FALSE)
 cpgd_report(res, "hpa_panel.html", dir = tempdir())

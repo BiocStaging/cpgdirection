@@ -13,7 +13,7 @@
 #'   installed package instead of testing against the shipped one. Use after a
 #'   deliberate change of behaviour, never to make a failure go away.
 #' @return Invisibly, \code{TRUE} on success. Prints a report either way.
-#' @examples
+#' @examplesIf cpgd_has_data("lookup_blood_hg19")
 #' cpgd_selftest()
 #' @export
 cpgd_selftest <- function(regenerate = NULL) {

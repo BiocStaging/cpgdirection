@@ -25,8 +25,8 @@
 #' than a TSS, so distances derived from it are cruder.
 #'
 #' @examples
-#' \donttest{
-#' # needs TxDb.Hsapiens.UCSC.hg19.knownGene and org.Hs.eg.db
+#' if (requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE) &&
+#'     requireNamespace("org.Hs.eg.db", quietly = TRUE)) {
 #' cpgd_build_gene_tss(out = tempfile(fileext = ".csv"))
 #' }
 #' @export
@@ -124,8 +124,8 @@ cpgd_build_gene_tss <- function(out = "gene_tss_hg19.csv",
 #' affecting expression at all. Use it to orient a hypothesis, not to settle one.
 #'
 #' @examples
-#' \donttest{
-#' # builds (and caches) the TxDb-derived TSS table on first use
+#' if (cpgd_has_data("cpg_positions_hg19") &&
+#'     requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE)) {
 #' cpg_direction_universal(c("cg03405789", "cg08215831"),
 #'                         genes = c("CRH", "CRH"))
 #' }
@@ -244,7 +244,7 @@ cpg_direction_universal <- function(cpgs, genes, gene_tss = NULL,
 #' useful.
 #'
 #' @return A \code{data.table} with \code{cpg_id}, \code{chr}, \code{pos}.
-#' @examples
+#' @examplesIf cpgd_has_data("cpg_positions_hg19")
 #' p <- cpgd_cpg_positions()
 #' p[p$cpg_id == "cg00000029", ]
 #' @export
@@ -271,7 +271,10 @@ cpgd_cpg_positions <- function() {
 #' @param refresh Rebuild even if a cached copy exists.
 #' @return A \code{data.table} with \code{gene}, \code{chr}, \code{tss},
 #'   \code{strand}.
-#' @examples \donttest{g <- cpgd_gene_tss(); g[gene == "CRH"]}
+#' @examples
+#' if (requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE)) {
+#'   g <- cpgd_gene_tss(); g[gene == "CRH"]
+#' }
 #' @export
 cpgd_gene_tss <- function(refresh = FALSE) {
   if (!refresh && !is.null(.cpgd_env$gene_tss)) return(.cpgd_env$gene_tss)

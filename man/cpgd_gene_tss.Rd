@@ -25,5 +25,7 @@ Called automatically by \code{\link{cpg_direction_universal}}. Call it
 directly only to force a rebuild or to inspect the table.
 }
 \examples{
-\donttest{g <- cpgd_gene_tss(); g[gene == "CRH"]}
+if (requireNamespace("TxDb.Hsapiens.UCSC.hg19.knownGene", quietly = TRUE)) {
+  g <- cpgd_gene_tss(); g[gene == "CRH"]
+}
 }

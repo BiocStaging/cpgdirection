@@ -3,6 +3,7 @@
 # makes about the shipped module, so a drifting data file fails loudly.
 
 test_that("brain directions table is shipped and shaped", {
+  skip_if_not(cpgd_has_data("brain_directions"), "brain directions unavailable")
   B <- cpgd_brain_directions()
   expect_true(all(c("cpg_id", "target_gene", "direction", "tier",
                     "heidi_status") %in% names(B)))
@@ -23,6 +24,7 @@ test_that("the deliverable matches the manuscript counts", {
 })
 
 test_that("cg06846259 returns the POMC story", {
+  skip_if_not(cpgd_has_data("brain_directions"), "brain directions unavailable")
   r <- cpg_brain_bridge("cg06846259", tissue = "saliva")
   expect_equal(nrow(r), 1L)
   expect_true(grepl("POMC", r$t1_genes[1]))
@@ -31,6 +33,7 @@ test_that("cg06846259 returns the POMC story", {
 })
 
 test_that("tissue argument switches the usable flag", {
+  skip_if_not(cpgd_has_data("brain_directions"), "brain directions unavailable")
   D <- cpgd_bridge_deliverable()
   # a CpG usable from blood but not saliva
   cand <- D[D$blood_ok == TRUE & D$saliva_ok == FALSE]$cpg_id
@@ -42,11 +45,13 @@ test_that("tissue argument switches the usable flag", {
 })
 
 test_that("unknown CpGs come back scored or NA, never dropped", {
+  skip_if_not(cpgd_has_data("brain_directions"), "brain directions unavailable")
   r <- cpg_brain_bridge(c("cg06846259", "cg00000029"))
   expect_equal(nrow(r), 2L)
 })
 
 test_that("every input format the grand function takes works here too", {
+  skip_if_not(cpgd_has_data("brain_directions"), "brain directions unavailable")
   forms <- list(
     bare   = "cg06846259",
     panel  = "Zcg06846259_TC21_POMC",
@@ -59,6 +64,7 @@ test_that("every input format the grand function takes works here too", {
 })
 
 test_that("co-regulation columns exist and keep their evidence classes apart", {
+  skip_if_not(cpgd_has_data("brain_directions"), "brain directions unavailable")
   r <- cpg_brain_bridge("cg06846259")
   expect_true(all(c("co_up", "co_down", "hic_genes") %in% names(r)))
   # POMC is a -1 partner: it must sit in co_down, never in co_up
@@ -76,6 +82,7 @@ test_that("co-regulation columns exist and keep their evidence classes apart", {
 })
 
 test_that("a gene named in the input is answered, not discarded", {
+  skip_if_not(cpgd_has_data("brain_directions"), "brain directions unavailable")
   r <- cpg_brain_bridge("cg06846259_POMC")
   expect_true("requested_gene_direction" %in% names(r))
   expect_equal(as.integer(r$requested_gene_direction[1]), -1L)

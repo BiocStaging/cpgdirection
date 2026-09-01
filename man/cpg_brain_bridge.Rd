@@ -57,5 +57,7 @@ graded set, and otherwise a genome-wide synthesised saliva-bridge score.
 }
 
 \examples{
+\dontshow{if (cpgd_has_data("saliva_bridge_scores")) withAutoprint(\{ # examplesIf}
 cpg_brain_bridge("cg06846259", tissue = "saliva")   # POMC, grade A++
+\dontshow{\}) # examplesIf}
 }

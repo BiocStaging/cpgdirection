@@ -26,5 +26,7 @@ gate the result, because it is the sign of the probability and would only
 restate it.
 }
 \examples{
+\dontshow{if (cpgd_has_data("lookup_blood_hg19")) withAutoprint(\{ # examplesIf}
 cpgd_selftest()
+\dontshow{\}) # examplesIf}
 }

@@ -62,7 +62,9 @@ Read the gene columns, not just the direction.
 }
 
 \examples{
+\dontshow{if (cpgd_has_data("lookup_blood_hg19")) withAutoprint(\{ # examplesIf}
 res <- cpg_direction_all_tissues(c("cg00050692", "cg00000029"),
                                  verbose = FALSE)
 res[, c("cpg_id", "best_direction", "best_evidence"), with = FALSE]
+\dontshow{\}) # examplesIf}
 }
